@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objecttypes>
+ <objecttype name="Entity" color="#aa0000">
+  <property name="Health" type="int" default="50"/>
+ </objecttype>
+ <objecttype name="Door" color="#3e1f00"/>
+</objecttypes>

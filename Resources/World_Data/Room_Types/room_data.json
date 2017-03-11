@@ -1,0 +1,11 @@
+{
+	"RoomData":
+	[
+		{"Name"		:"room_1.json",
+		 "ChanceWeight"	:600
+		},
+		{"Name"		:"room_3.json",
+		 "ChanceWeight"	:50
+		}
+	]
+}
