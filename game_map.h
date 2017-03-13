@@ -70,6 +70,14 @@ struct room_metadata_item
     sf::Vector2u    position;
 };
 
+struct RoomIndexConfigFile
+{
+    string      filename;
+    string      folderDirectory;
+    Json::Value root;
+    uint32      chanceWeightTotal;
+};
+
 struct MapRoom
 {
     uint32                          room_type = 0;
@@ -127,16 +135,23 @@ struct GameMap
     MapFlowGraph::Node        graphFlow;
 };
 
+
+RoomIndexConfigFile loadRoomIndexConfigFile(string filename);
+
 MapRoom loadTiledRoom_CSV(string filename, sf::Vector2u size);
 MapRoom loadTiledRoom_JSON(string filename);
 MapRoom loadTiledRoom(string filename, sf::Vector2u size=sf::Vector2u(0,0));
-MapRoom loadRoomRandom(Json::Value &root, string rootFilename, uint32 weightChanceTotal, real32 splitPoint);
+MapRoom loadRoomFromChanceSplit(RoomIndexConfigFile &file, real32 splitPoint);
+
 vector<sf::Vector2i> getRoomToRoomPath(GameMap &map, sf::Vector2u corridor, MapRoom_GraphEdge edge);
+
 GameMap generateRandomGenericDungeon(uint32 seed, string roomdata_filename);
 GameMap generateRandomGenericDungeonUsingMapFlow(mt19937 &random_engine, string roomdata_filename);
+
 MapRoom createRoom(sf::Vector2u size, byte tile_type = 0);
+
 sf::Vector2f relativeRoomPosition(GameMap &map, sf::Vector2f position, MapRoom_Refrence old_room, MapRoom_Refrence new_room);
-bool    setRectTileArea(MapRoom &room, byte tile_id, sf::IntRect area);
+void    setRectTileArea(MapRoom &room, byte tile_id, sf::IntRect area);
 bool    doesRectContainSolidTiles(GameMap &map, Tileset &tileset, uint32 room_id, sf::FloatRect rect,sf::Vector2f offset = sf::Vector2f(0,0));
 void    attachRoom(GameMap &map, uint32 primaryRoom, uint32 secondaryRoom, sf::Vector2u primaryDoor, sf::Vector2u secondaryDoor, MapDirection direction);
 int32   setTileFromGlobalPos(GameMap &map, sf::Vector2i position, byte tile_id);

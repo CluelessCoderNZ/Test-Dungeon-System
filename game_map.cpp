@@ -132,25 +132,45 @@ MapRoom loadTiledRoom(string filename, sf::Vector2u size)
         // NOTE(Connor): Error handling
         cout << "Error: Loading '"+filename+"' unknown filetype" << endl;
     }
+    
+    return MapRoom();
 }
 
-MapRoom loadRoomRandom(Json::Value &root, string rootFilename, uint32 weightChanceTotal, real32 splitPoint)
+MapRoom loadRoomFromChanceSplit(RoomIndexConfigFile &file, real32 splitPoint)
 {
     assert(splitPoint < 1 && splitPoint > 0);
 
-    uint32 targetChance = splitPoint * weightChanceTotal;
+    MapRoom room;
+
+    uint32 targetChance = splitPoint * file.chanceWeightTotal;
     uint32 chanceCurrent = 0;
-    for(int i = 0; i < root["RoomData"].size(); i++)
+    for(int i = 0; i < file.root["RoomData"].size(); i++)
     {
-        chanceCurrent += root["RoomData"][i]["ChanceWeight"].asUInt();
+        chanceCurrent += file.root["RoomData"][i]["ChanceWeight"].asUInt();
         if(targetChance < chanceCurrent)
         {
-            MapRoom room = loadTiledRoom(rootFilename + root["RoomData"][i]["Name"].asString());
+            room = loadTiledRoom(file.folderDirectory + file.root["RoomData"][i]["Name"].asString());
             room.room_type = i+1;
-
-            return room;
+            break;
         }
     }
+
+    return room;
+}
+
+RoomIndexConfigFile loadRoomIndexConfigFile(string filename)
+{
+    RoomIndexConfigFile file;
+    file.filename           = filename;
+    file.folderDirectory    = filename.substr(0,filename.find_last_of('/')+1);
+    file.root               = readJsonFile(filename);
+
+    for(int i = 0; i < file.root["RoomData"].size(); i++)
+    {
+        file.chanceWeightTotal += file.root["RoomData"][i]["ChanceWeight"].asUInt();
+    }
+
+    return file;
 }
 
 vector<sf::Vector2i> getRoomToRoomPath(GameMap &map, sf::Vector2u corridor, MapRoom_GraphEdge edge)
@@ -372,17 +392,10 @@ GameMap generateRandomGenericDungeon(uint32 seed, string roomdata_filename)
 {
     cout << "Generating Map with seed " << seed << endl;
     GameMap     map;
-    Json::Value root = readJsonFile(roomdata_filename);
-    string      rootDir = roomdata_filename.substr(0,roomdata_filename.find_last_of('/')+1);
+    RoomIndexConfigFile indexFile = loadRoomIndexConfigFile(roomdata_filename);
 
     mt19937     random_engine(seed);
     uniform_real_distribution<real32> dist_real32(0.0f,1.0f);
-
-    uint32 chanceTotalWeight = 0;
-    for(int i = 0; i < root["RoomData"].size(); i++)
-    {
-        chanceTotalWeight += root["RoomData"][i]["ChanceWeight"].asUInt();
-    }
 
     // Randomly place rooms
     uint32          generatedRoomMininum= 10;
@@ -391,7 +404,7 @@ GameMap generateRandomGenericDungeon(uint32 seed, string roomdata_filename)
     sf::Vector2u    startPosition       = sf::Vector2u(5000,5000);
     for(uint32 i = 0; i < generatedRoomMininum || dist_real32(random_engine) > 1.0/50.0;)
     {
-        MapRoom room = loadRoomRandom(root, rootDir, chanceTotalWeight, dist_real32(random_engine));
+        MapRoom room = loadRoomFromChanceSplit(indexFile, dist_real32(random_engine));
         // NOTE(Connor): If wanting to be truly in range take away the room size
         room.bounds.left = startPosition.x + generationRoomRange.x * dist_real32(random_engine);
         room.bounds.top  = startPosition.y + generationRoomRange.y * dist_real32(random_engine);
@@ -915,7 +928,7 @@ bool doesRectContainRoom(GameMap &map, sf::IntRect rect)
     return false;
 }
 
-bool setRectTileArea(MapRoom &room, byte tile_id, sf::IntRect area)
+void setRectTileArea(MapRoom &room, byte tile_id, sf::IntRect area)
 {
     // Crop area to fit
     area.left   = min(max(area.left, 0),    room.bounds.width);
