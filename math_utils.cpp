@@ -7,6 +7,11 @@ sf::FloatRect scaleRect(sf::IntRect rect, sf::Vector2f scalar)
     return sf::FloatRect(rect.left * scalar.x, rect.top * scalar.y, rect.width * scalar.x, rect.height  * scalar.y);
 }
 
+sf::Vector2f getCenterOfRect(sf::IntRect rect)
+{
+    return sf::Vector2f(rect.left+rect.width/2, rect.top+rect.height/2);
+}
+
 sf::Vector2f  getPerimeterPoint(sf::IntRect rect, real32 cursor)
 {
     cursor = (rect.width * 2 + rect.height * 2)*cursor;
@@ -80,7 +85,6 @@ sf::Vector2f getPerimeterPointByAngle(sf::IntRect rect, real32 theta)
         edgePoint.x += xFactor * (bb / (2. * tanTheta));
         edgePoint.y += yFactor * (bb /  2.);
     }
-    cout << theta << ": " << region << endl;
 
     return edgePoint;
 }

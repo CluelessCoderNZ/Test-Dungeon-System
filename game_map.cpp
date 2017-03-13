@@ -812,7 +812,7 @@ GameMap generateRandomGenericDungeon(uint32 seed, string roomdata_filename)
     return map;
 }
 
-void generateRoomClusterNode(GameMap &map, mt19937 &random_engine, RoomIndexConfigFile &indexFile, MapRoom_Refrence parentRoom, uint32 clusterCount, real32 maxRoomDistance, real32 minRoomDistance)
+void generateRoomClusterNode(GameMap &map, mt19937 &random_engine, RoomIndexConfigFile &indexFile, MapRoom_Refrence parentRoom, uint32 clusterCount, real32 maxRoomDistance, real32 minRoomDistance, uint32 roomBoundaryExtend)
 {
     uniform_real_distribution<real32> dist_real32(0.0f,1.0f);
     uint32 startIndex = map.room.size();
@@ -828,32 +828,27 @@ void generateRoomClusterNode(GameMap &map, mt19937 &random_engine, RoomIndexConf
         else
             targetRoom = targetRoom-1+startIndex;
 
-        MapRoom room = loadRoomFromChanceSplit(indexFile, /*dist_real32(random_engine)*/0);
-
-        static real32 increment = 0;
-        increment += 0.01;
-        real32 angle = increment;//dist_real32(random_engine)*kTAU;
-        cout << angle << endl;
+        MapRoom room = loadRoomFromChanceSplit(indexFile, dist_real32(random_engine));
+        real32 angle = dist_real32(random_engine)*kTAU;
 
         sf::Vector2f perimeterTargetRoomPoint = getPerimeterPointByAngle(map.room[targetRoom].bounds, angle);
-        sf::Vector2f perimeterNewRoomPoint = getPerimeterPointByAngle(room.bounds, fmod(angle+kPI, kTAU));
+        sf::Vector2f perimeterNewRoomPoint = getPerimeterPointByAngle(room.bounds, angle-kPI);
         real32 distance = minRoomDistance + dist_real32(random_engine)*(maxRoomDistance-minRoomDistance);
+        angle = getAngle(sf::Vector2f(map.room[targetRoom].bounds.width/2.0, map.room[targetRoom].bounds.height/2.0), perimeterNewRoomPoint);
 
         room.bounds.left = map.room[targetRoom].bounds.left + perimeterTargetRoomPoint.x + cos(angle)*distance - perimeterNewRoomPoint.x;
         room.bounds.top  = map.room[targetRoom].bounds.top  + perimeterTargetRoomPoint.y + sin(angle)*distance - perimeterNewRoomPoint.y;
 
+
         sf::IntRect roomBoundaryZone = room.bounds;
-        roomBoundaryZone.left   -= minRoomDistance;
-        roomBoundaryZone.top    -= minRoomDistance;
-        roomBoundaryZone.width  += minRoomDistance*2;
-        roomBoundaryZone.height += minRoomDistance*2;
+        roomBoundaryZone.left   -= roomBoundaryExtend;
+        roomBoundaryZone.top    -= roomBoundaryExtend;
+        roomBoundaryZone.width  += roomBoundaryExtend*2;
+        roomBoundaryZone.height += roomBoundaryExtend*2;
 
         // Check for collisions
         bool NoCollision = true;
-        if(map.room[parentRoom.id].bounds.intersects(room.bounds))
-            NoCollision = false;
-
-        for(uint32 i = startIndex; i < map.room.size() && NoCollision; i++)
+        for(uint32 i = 0; i < map.room.size() && NoCollision; i++)
         {
             if(map.room[i].bounds.intersects(roomBoundaryZone))
             {
@@ -882,7 +877,7 @@ GameMap generateRandomGenericDungeonUsingMapFlow(mt19937 &random_engine, string 
     MapRoom_Refrence ref;
     ref.id = 0;
 
-    generateRoomClusterNode(map, random_engine, indexFile, ref, 1, 4, 6);
+    generateRoomClusterNode(map, random_engine, indexFile, ref, 50, 8, 18,2);
 
     /*
         Pseudo Code

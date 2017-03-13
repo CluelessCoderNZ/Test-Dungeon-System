@@ -6,6 +6,7 @@
 #include "game_consts.h"
 
 sf::FloatRect scaleRect(sf::IntRect rect, sf::Vector2f scalar);
+sf::Vector2f  getCenterOfRect(sf::IntRect rect);
 sf::Vector2f  getPerimeterPoint(sf::IntRect rect, real32 cursor);
 sf::Vector2f  getPerimeterPointByAngle(sf::IntRect rect, real32 angle);
 
