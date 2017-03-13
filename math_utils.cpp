@@ -7,6 +7,84 @@ sf::FloatRect scaleRect(sf::IntRect rect, sf::Vector2f scalar)
     return sf::FloatRect(rect.left * scalar.x, rect.top * scalar.y, rect.width * scalar.x, rect.height  * scalar.y);
 }
 
+sf::Vector2f  getPerimeterPoint(sf::IntRect rect, real32 cursor)
+{
+    cursor = (rect.width * 2 + rect.height * 2)*cursor;
+
+    if(cursor < rect.width)
+    {
+        return sf::Vector2f(cursor, 0);
+    }else if(cursor < rect.width + rect.height)
+    {
+        return sf::Vector2f(rect.width, cursor - rect.width);
+    }else if(cursor < rect.width * 2 + rect.height)
+    {
+        return sf::Vector2f(rect.width - (cursor - rect.width - rect.height), rect.height);
+    }else
+    {
+        return sf::Vector2f(0, rect.height - (cursor - rect.width * 2 - rect.height));
+    }
+}
+
+sf::Vector2f getPerimeterPointByAngle(sf::IntRect rect, real32 theta)
+{
+    while (theta < -kPI)
+    {
+        theta += kTAU;
+    }
+
+    while (theta > kPI)
+    {
+        theta -= kTAU;
+    }
+
+    real32 aa = rect.width;
+    real32 bb = rect.height;
+
+    real32 rectAtan = atan2f(bb, aa);
+    real32 tanTheta = tan(theta);
+
+    uint32 region;
+    if ((theta > -rectAtan) && (theta <= rectAtan) )
+    {
+        region = 1;
+    }else if ((theta > rectAtan) && (theta <= (kPI - rectAtan)))
+    {
+        region = 2;
+    }else if ((theta > (kPI - rectAtan)) || (theta <= -(kPI - rectAtan)))
+    {
+        region = 3;
+    }else
+    {
+        region = 4;
+    }
+
+    sf::Vector2f edgePoint(rect.width/2, rect.height/2);
+    real32 xFactor = 1;
+    real32 yFactor = 1;
+
+    switch (region)
+    {
+        case 1: yFactor = -1;       break;
+        case 2: yFactor = -1;       break;
+        case 3: xFactor = -1;       break;
+        case 4: xFactor = -1;       break;
+    }
+
+    if ((region == 1) || (region == 3))
+    {
+        edgePoint.x += xFactor * (aa / 2.);
+        edgePoint.y += yFactor * (aa / 2.) * tanTheta;
+    }else
+    {
+        edgePoint.x += xFactor * (bb / (2. * tanTheta));
+        edgePoint.y += yFactor * (bb /  2.);
+    }
+    cout << theta << ": " << region << endl;
+
+    return edgePoint;
+}
+
 real32 getAngle(sf::Vector2f a, sf::Vector2f b)
 {
     return atan2(a.y-b.y, a.x-b.x);

@@ -37,7 +37,9 @@ int main(int argc, char* argv[])
     if(argc > 1)
         startingSeed = str2uint(argv[1]);
 
-    gamestate.current_map       = generateRandomGenericDungeon(startingSeed, "Resources/World_Data/Room_Types/room_data.json");
+    mt19937 random_engine(startingSeed);
+
+    gamestate.current_map       = generateRandomGenericDungeonUsingMapFlow(random_engine, "Resources/World_Data/Room_Types/room_data.json");
     gamestate.camera_fixedView  = scaleRect(getRoomGroupBounds(gamestate.current_map, gamestate.current_map.room[((Entity_Component_Position*)getEntityComponent(gamestate.entity_controller, gamestate.player, EC_POSITION))->room].room_group), sf::Vector2f(gamestate.current_map.tileSize.x, gamestate.current_map.tileSize.y));
 
     gamestate.player = createPlayerEntity(gamestate.current_map, gamestate.entity_controller, Entity_Component_Position(sf::Vector2f(5,5), 0));

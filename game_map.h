@@ -75,7 +75,7 @@ struct RoomIndexConfigFile
     string      filename;
     string      folderDirectory;
     Json::Value root;
-    uint32      chanceWeightTotal;
+    uint32      chanceWeightTotal = 0;
 };
 
 struct MapRoom
@@ -146,6 +146,8 @@ MapRoom loadRoomFromChanceSplit(RoomIndexConfigFile &file, real32 splitPoint);
 vector<sf::Vector2i> getRoomToRoomPath(GameMap &map, sf::Vector2u corridor, MapRoom_GraphEdge edge);
 
 GameMap generateRandomGenericDungeon(uint32 seed, string roomdata_filename);
+
+void    generateRoomClusterNode(GameMap &map, mt19937 &random_engine, RoomIndexConfigFile &indexFile, MapRoom_Refrence parentRoom, uint32 clusterCount, real32 maxRoomDistance = 5, real32 minRoomDistance = 0);
 GameMap generateRandomGenericDungeonUsingMapFlow(mt19937 &random_engine, string roomdata_filename);
 
 MapRoom createRoom(sf::Vector2u size, byte tile_type = 0);

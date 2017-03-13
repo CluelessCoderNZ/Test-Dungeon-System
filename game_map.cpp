@@ -132,13 +132,13 @@ MapRoom loadTiledRoom(string filename, sf::Vector2u size)
         // NOTE(Connor): Error handling
         cout << "Error: Loading '"+filename+"' unknown filetype" << endl;
     }
-    
+
     return MapRoom();
 }
 
 MapRoom loadRoomFromChanceSplit(RoomIndexConfigFile &file, real32 splitPoint)
 {
-    assert(splitPoint < 1 && splitPoint > 0);
+    assert(splitPoint <= 1 && splitPoint >= 0);
 
     MapRoom room;
 
@@ -812,9 +812,77 @@ GameMap generateRandomGenericDungeon(uint32 seed, string roomdata_filename)
     return map;
 }
 
+void generateRoomClusterNode(GameMap &map, mt19937 &random_engine, RoomIndexConfigFile &indexFile, MapRoom_Refrence parentRoom, uint32 clusterCount, real32 maxRoomDistance, real32 minRoomDistance)
+{
+    uniform_real_distribution<real32> dist_real32(0.0f,1.0f);
+    uint32 startIndex = map.room.size();
+
+    while(map.room.size()-startIndex < clusterCount)
+    {
+        uniform_int_distribution<uint32> dist_int(0,map.room.size()-startIndex);
+        uint32 targetRoom = dist_int(random_engine);
+
+        // Get target room
+        if(targetRoom == 0)
+            targetRoom = parentRoom.id;
+        else
+            targetRoom = targetRoom-1+startIndex;
+
+        MapRoom room = loadRoomFromChanceSplit(indexFile, /*dist_real32(random_engine)*/0);
+
+        static real32 increment = 0;
+        increment += 0.01;
+        real32 angle = increment;//dist_real32(random_engine)*kTAU;
+        cout << angle << endl;
+
+        sf::Vector2f perimeterTargetRoomPoint = getPerimeterPointByAngle(map.room[targetRoom].bounds, angle);
+        sf::Vector2f perimeterNewRoomPoint = getPerimeterPointByAngle(room.bounds, fmod(angle+kPI, kTAU));
+        real32 distance = minRoomDistance + dist_real32(random_engine)*(maxRoomDistance-minRoomDistance);
+
+        room.bounds.left = map.room[targetRoom].bounds.left + perimeterTargetRoomPoint.x + cos(angle)*distance - perimeterNewRoomPoint.x;
+        room.bounds.top  = map.room[targetRoom].bounds.top  + perimeterTargetRoomPoint.y + sin(angle)*distance - perimeterNewRoomPoint.y;
+
+        sf::IntRect roomBoundaryZone = room.bounds;
+        roomBoundaryZone.left   -= minRoomDistance;
+        roomBoundaryZone.top    -= minRoomDistance;
+        roomBoundaryZone.width  += minRoomDistance*2;
+        roomBoundaryZone.height += minRoomDistance*2;
+
+        // Check for collisions
+        bool NoCollision = true;
+        if(map.room[parentRoom.id].bounds.intersects(room.bounds))
+            NoCollision = false;
+
+        for(uint32 i = startIndex; i < map.room.size() && NoCollision; i++)
+        {
+            if(map.room[i].bounds.intersects(roomBoundaryZone))
+            {
+                NoCollision = false;
+            }
+        }
+
+        // Add room to list
+        if(NoCollision)
+        {
+            map.room.push_back(room);
+        }
+    }
+}
+
 GameMap generateRandomGenericDungeonUsingMapFlow(mt19937 &random_engine, string roomdata_filename)
 {
     GameMap map;
+    RoomIndexConfigFile indexFile = loadRoomIndexConfigFile(roomdata_filename);
+
+    uniform_real_distribution<real32> dist_real32(0.0f,1.0f);
+
+    map.room.push_back(loadRoomFromChanceSplit(indexFile, 0));
+    map.room[0].bounds.left = 5000;
+    map.room[0].bounds.top  = 5000;
+    MapRoom_Refrence ref;
+    ref.id = 0;
+
+    generateRoomClusterNode(map, random_engine, indexFile, ref, 1, 4, 6);
 
     /*
         Pseudo Code
@@ -849,6 +917,7 @@ GameMap generateRandomGenericDungeonUsingMapFlow(mt19937 &random_engine, string 
 
                 GenerateNodeSection(selected);
     */
+    generateSortKeysForMap(map);
 
     return map;
 }

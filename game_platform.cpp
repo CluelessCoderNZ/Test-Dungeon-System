@@ -200,6 +200,18 @@ void GAME_UPDATE_AND_RENDER(GameState &state, InputState input, real32 t)
 
     RenderWholeMap(state.entity_controller, state);
 
+    sf::CircleShape circle(30);
+    circle.setFillColor(sf::Color::Blue);
+    circle.setOrigin(30, 30);
+
+    static real32 testAngle = 0;
+    testAngle+=0.05;
+    sf::Vector2f offset = getPerimeterPointByAngle(state.current_map.room[0].bounds, testAngle);
+    cout << offset.x << ", " << offset.y << endl;
+    circle.setPosition((state.current_map.room[0].bounds.left + offset.x) * state.current_map.tileSize.x, (state.current_map.room[0].bounds.top + offset.y) * state.current_map.tileSize.y);
+    state.window.draw(circle);
+    drawLine(state.window, sf::Vector2f((state.current_map.room[0].bounds.left +state.current_map.room[0].bounds.width/2) * state.current_map.tileSize.x, (state.current_map.room[0].bounds.top +state.current_map.room[0].bounds.height/2) * state.current_map.tileSize.y), circle.getPosition(), sf::Color::Yellow);
+
     if(state.debug.isEnabled)
         updateDebugState(state, input);
 }
@@ -253,9 +265,10 @@ void updateDebugState(GameState &state, InputState input)
     }
 
     static uint32 debug_mapReloadIteration = 0;
-    if(input.action(INPUT_DEBUG_ACTION_1).state == BUTTON_RELEASED)
+    if(input.action(INPUT_DEBUG_ACTION_1).state == BUTTON_RELEASED || true)
     {
-        state.current_map = generateRandomGenericDungeon(time(NULL)+debug_mapReloadIteration, "Resources/World_Data/Room_Types/room_data.json");
+        mt19937 random_engine(time(NULL)+debug_mapReloadIteration);
+        state.current_map = generateRandomGenericDungeonUsingMapFlow(random_engine, "Resources/World_Data/Room_Types/room_data.json");
         debug_mapReloadIteration++;
     }
 
@@ -402,7 +415,6 @@ void updateDebugState(GameState &state, InputState input)
     //if(seed==0)
         seed = time(NULL)/10;
     mt19937     random_engine(seed);
-    cout << "Graph Seed:" << seed << endl;
     MapFlowGraph::Node node;
     node = MapFlowGraph::generateGraph(random_engine);
     MapFlowGraph::renderGraphNode(state.window, &node, sf::Vector2f(18,18));
