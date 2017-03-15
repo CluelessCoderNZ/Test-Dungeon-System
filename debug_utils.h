@@ -56,7 +56,7 @@ struct DebugStateInformation
     bool     display_memorySelectedEntity=true;
 
     bool     display_FPS=true;
-    bool     display_RoomBoundaries=false;
+    bool     display_RoomBoundaries=true;
     bool     display_RoomGraph=true;
     bool     display_TileGrid=false;
     bool     display_RoomID=false;

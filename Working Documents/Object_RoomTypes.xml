@@ -3,5 +3,7 @@
  <objecttype name="Entity" color="#aa0000">
   <property name="Health" type="int" default="50"/>
  </objecttype>
- <objecttype name="Door" color="#3e1f00"/>
+ <objecttype name="Door" color="#3e1f00">
+  <property name="Direction" type="string" default=""/>
+ </objecttype>
 </objecttypes>

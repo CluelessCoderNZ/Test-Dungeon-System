@@ -88,7 +88,8 @@ MapRoom loadTiledRoom_JSON(string filename)
                                 }
                                 if(root["layers"][i]["objects"][j].isMember("properties") && root["layers"][i]["objects"][j]["properties"].isArray())
                                 {
-                                    item.data = root["layers"][i]["objects"][j]["properties"];
+                                    item.data    = root["layers"][i]["objects"][j]["properties"];
+                                    item.hasData = true;
                                 }
 
                                 output.metadata.push_back(item);
@@ -494,6 +495,7 @@ GameMap generateRandomGenericDungeon(uint32 seed, string roomdata_filename)
                         }
                     }
                 }
+
                 room_id   = edge.p2.room.id;
                 for(int j = 0; j < map.room[room_id].metadata.size(); j++)
                 {
@@ -814,8 +816,10 @@ GameMap generateRandomGenericDungeon(uint32 seed, string roomdata_filename)
 
 void generateRoomClusterNode(GameMap &map, mt19937 &random_engine, RoomIndexConfigFile &indexFile, MapRoom_Refrence parentRoom, uint32 clusterCount, real32 maxRoomDistance, real32 minRoomDistance, uint32 roomBoundaryExtend)
 {
+    vector<uint32> clusterRoomList;
     uniform_real_distribution<real32> dist_real32(0.0f,1.0f);
     uint32 startIndex = map.room.size();
+    clusterRoomList.push_back(parentRoom.id);
 
     while(map.room.size()-startIndex < clusterCount)
     {
@@ -860,8 +864,121 @@ void generateRoomClusterNode(GameMap &map, mt19937 &random_engine, RoomIndexConf
         if(NoCollision)
         {
             map.room.push_back(room);
+            clusterRoomList.push_back(map.room.size()-1);
         }
     }
+
+    generateGraphMap(map, clusterRoomList);
+}
+
+void generateGraphMap(GameMap &map, vector<uint32> &roomList)
+{
+    // Create list of all door points
+    vector<Vec2f> doorPoints;
+    for(uint32 listID = 0; listID < roomList.size(); listID++)
+    {
+        uint32 i = roomList[listID];
+        for(int j = 0; j < map.room[i].metadata.size(); j++)
+        {
+            if(map.room[i].metadata[j].type == "Door")
+            {
+                doorPoints.push_back(Vec2f(map.room[i].bounds.left + map.room[i].metadata[j].position.x, map.room[i].bounds.top + map.room[i].metadata[j].position.y));
+            }
+        }
+    }
+
+    // Generate door node edges through triangulation
+    Delaunay triangulation;
+    triangulation.triangulate(doorPoints);
+    vector<Edge> rawedges = triangulation.getEdges();
+
+    vector<MapRoom_GraphEdge> sortedGraphMap;
+
+    for(uint32 i = 0; i < rawedges.size(); i++)
+    {
+        MapRoom_GraphEdge edge;
+
+        uint found = 0;
+        for(uint32 listID = 0; listID < roomList.size() && found != 2; listID++)
+        {
+            uint32 x = roomList[listID];
+            if(map.room[x].bounds.contains(rawedges[i].p1.x, rawedges[i].p1.y))
+            {
+                edge.p1.point   = sf::Vector2i(rawedges[i].p1.x, rawedges[i].p1.y);
+                edge.p1.room.id = x;
+                found++;
+            }
+
+            if(map.room[x].bounds.contains(rawedges[i].p2.x, rawedges[i].p2.y))
+            {
+                edge.p2.point   = sf::Vector2i(rawedges[i].p2.x, rawedges[i].p2.y);
+                edge.p2.room.id = x;
+                found++;
+            }
+        }
+
+        if(found == 2 && edge.p1.room.id != edge.p2.room.id)
+        {
+            edge.length = getDistance(edge.p1.point, edge.p2.point);
+
+            // Find Room Door Direction
+            int room_id   = edge.p1.room.id;
+            for(int j = 0; j < map.room[room_id].metadata.size(); j++)
+            {
+                if(map.room[room_id].metadata[j].type == "Door")
+                {
+                    if(map.room[room_id].metadata[j].position.x + map.room[room_id].bounds.left == edge.p1.point.x &&
+                       map.room[room_id].metadata[j].position.y + map.room[room_id].bounds.top == edge.p1.point.y)
+                    {
+                        if(map.room[room_id].metadata[j].position.x == 0)                                       edge.p1.doorDirection=DIR_WEST;
+                        else if(map.room[room_id].metadata[j].position.y == 0)                                  edge.p1.doorDirection=DIR_NORTH;
+                        else if(map.room[room_id].metadata[j].position.x == map.room[room_id].bounds.width-1)   edge.p1.doorDirection=DIR_EAST;
+                        else if(map.room[room_id].metadata[j].position.y == map.room[room_id].bounds.height-1)  edge.p1.doorDirection=DIR_SOUTH;
+
+                        edge.p1.doorID = j;
+                        break;
+                    }
+                }
+            }
+
+            room_id   = edge.p2.room.id;
+            for(int j = 0; j < map.room[room_id].metadata.size(); j++)
+            {
+                if(map.room[room_id].metadata[j].type == "Door")
+                {
+                    if(map.room[room_id].metadata[j].position.x + map.room[room_id].bounds.left == edge.p2.point.x &&
+                       map.room[room_id].metadata[j].position.y + map.room[room_id].bounds.top == edge.p2.point.y)
+                    {
+                        if(map.room[room_id].metadata[j].position.x == 0)                                       edge.p2.doorDirection=DIR_WEST;
+                        else if(map.room[room_id].metadata[j].position.y == 0)                                  edge.p2.doorDirection=DIR_NORTH;
+                        else if(map.room[room_id].metadata[j].position.x == map.room[room_id].bounds.width-1)   edge.p2.doorDirection=DIR_EAST;
+                        else if(map.room[room_id].metadata[j].position.y == map.room[room_id].bounds.height-1)  edge.p2.doorDirection=DIR_SOUTH;
+
+                        edge.p2.doorID = j;
+                        break;
+                    }
+                }
+            }
+
+            // TODO(Connor): Replace with a binary sort for log(n) preformance
+            bool needAdded=true;
+            for(uint32 i = 0; i < sortedGraphMap.size(); i++)
+            {
+                if(sortedGraphMap[i].length > edge.length)
+                {
+                    sortedGraphMap.insert(sortedGraphMap.begin()+i, edge);
+                    needAdded=false;
+                    break;
+                }
+            }
+            if(needAdded)
+            {
+                sortedGraphMap.push_back(edge);
+            }
+        }
+    }
+    map.graphMap.insert(map.graphMap.end(), sortedGraphMap.begin(), sortedGraphMap.end());
+
 }
 
 GameMap generateRandomGenericDungeonUsingMapFlow(mt19937 &random_engine, string roomdata_filename)
@@ -877,7 +994,9 @@ GameMap generateRandomGenericDungeonUsingMapFlow(mt19937 &random_engine, string 
     MapRoom_Refrence ref;
     ref.id = 0;
 
-    generateRoomClusterNode(map, random_engine, indexFile, ref, 50, 8, 18,2);
+    generateRoomClusterNode(map, random_engine, indexFile, ref, 50, 8, 18, 2);
+    ref.id = 50;
+    generateRoomClusterNode(map, random_engine, indexFile, ref, 50, 8, 18, 2);
 
     /*
         Pseudo Code
