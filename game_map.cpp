@@ -537,7 +537,6 @@ GameMap generateRandomGenericDungeon(uint32 seed, string roomdata_filename)
         // ----------------------------------------------
 
         // Generate disjointed set of rooms to organise connections
-        // TODO(Connor): Fix multiple connections to one door bug resulting in segmented room groups
         struct roomDoorID
         {
             uint32 room;
@@ -868,10 +867,10 @@ void generateRoomClusterNode(GameMap &map, mt19937 &random_engine, RoomIndexConf
         }
     }
 
-    generateGraphMap(map, clusterRoomList);
+    generateGraphMap(map, clusterRoomList, random_engine);
 }
 
-void generateGraphMap(GameMap &map, vector<uint32> &roomList)
+void generateGraphMap(GameMap &map, vector<uint32> &roomList, mt19937 &random_engine)
 {
     // Create list of all door points
     vector<Vec2f> doorPoints;
@@ -977,8 +976,99 @@ void generateGraphMap(GameMap &map, vector<uint32> &roomList)
             }
         }
     }
-    map.graphMap.insert(map.graphMap.end(), sortedGraphMap.begin(), sortedGraphMap.end());
 
+    // Generate mininium spanning tree from graph map
+    // ----------------------------------------------
+    vector<MapRoom_GraphEdge> mstGraphMap;
+    uniform_real_distribution<real32> dist_real32(0.0f,1.0f);
+
+    // Generate disjointed set of rooms to organise connections
+    struct roomDoorID
+    {
+        uint32 room;
+        uint32 door;
+    };
+
+    vector<roomDoorID> inUseDoors;
+    unordered_map<uint32, uint32> disjointedSetRoomParents;
+    for(uint32 i = 0; i < roomList.size(); i++)
+    {
+        disjointedSetRoomParents[roomList[i]] = roomList[i];
+    }
+
+    for(uint32 i = 0 ; i < sortedGraphMap.size(); i++)
+    {
+        // Check if unique
+        uint32 set_p1 = disjointedSetRoomParents[sortedGraphMap[i].p1.room.id];
+        uint32 set_p2 = disjointedSetRoomParents[sortedGraphMap[i].p2.room.id];
+
+        bool allowLoop=dist_real32(random_engine) > 0.99;
+
+        if(set_p1 != set_p2 || allowLoop)
+        {
+            bool isValid=true;
+
+            // Search if door is already in use
+            for(uint32 j = 0; j < inUseDoors.size(); j++)
+            {
+                if((sortedGraphMap[i].p1.room.id == inUseDoors[j].room &&
+                    sortedGraphMap[i].p1.doorID  == inUseDoors[j].door) ||
+                   (sortedGraphMap[i].p2.room.id == inUseDoors[j].room &&
+                    sortedGraphMap[i].p2.doorID  == inUseDoors[j].door))
+                {
+                    isValid=false;
+                    break;
+                }
+            }
+
+            if(allowLoop)
+            {
+                // Search if Room Connection already exists
+                // This is to make loops more intresting
+                uint32 min_current_room_id = min(sortedGraphMap[i].p1.room.id, sortedGraphMap[i].p2.room.id);
+                uint32 max_current_room_id = max(sortedGraphMap[i].p1.room.id, sortedGraphMap[i].p2.room.id);
+                for(uint32 j = 0;j < mstGraphMap.size(); j++)
+                {
+                    uint32 min_exists_room_id = min(mstGraphMap[j].p1.room.id, mstGraphMap[j].p2.room.id);
+                    uint32 max_exists_room_id = max(mstGraphMap[j].p1.room.id, mstGraphMap[j].p2.room.id);
+
+                    if(min_current_room_id == min_exists_room_id &&
+                       max_current_room_id == max_exists_room_id)
+                    {
+                        isValid = false;
+                        break;
+                    }
+                }
+            }
+
+            if(isValid)
+            {
+                uint32 newSet = max(set_p1, set_p2);
+                uint32 oldSet = min(set_p1, set_p2);
+                for(uint32 x = 0; x < disjointedSetRoomParents.size(); x++)
+                {
+                    if(disjointedSetRoomParents[x] == oldSet)
+                    {
+                        disjointedSetRoomParents[x] = newSet;
+                    }
+                }
+
+                mstGraphMap.push_back(sortedGraphMap[i]);
+                mstGraphMap[mstGraphMap.size()-1].is_main_branch = !allowLoop;
+
+                roomDoorID id;
+                id.door = sortedGraphMap[i].p1.doorID;
+                id.room = sortedGraphMap[i].p1.room.id;
+                inUseDoors.push_back(id);
+                id.door = sortedGraphMap[i].p2.doorID;
+                id.room = sortedGraphMap[i].p2.room.id;
+                inUseDoors.push_back(id);
+            }
+        }
+    }
+
+    // Insert graph map to final
+    map.graphMap.insert(map.graphMap.end(), mstGraphMap.begin(), mstGraphMap.end());
 }
 
 GameMap generateRandomGenericDungeonUsingMapFlow(mt19937 &random_engine, string roomdata_filename)
