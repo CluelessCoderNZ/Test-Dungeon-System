@@ -149,7 +149,8 @@ vector<sf::Vector2i> getRoomToRoomPath(GameMap &map, sf::Vector2u corridor, MapR
 
 GameMap generateRandomGenericDungeon(uint32 seed, string roomdata_filename);
 
-void    generateGraphMap(GameMap &map, vector<uint32> &roomList, mt19937 &random_engine);
+void    createHallwaysFromGraphMap(GameMap &map, vector<MapRoom_GraphEdge> &graphMap, uint32 hallwayWidth=5, uint32 wallThickness=1);
+void    generateGraphMap(GameMap &map, vector<MapRoom_GraphEdge> &graphMap, vector<uint32> &roomList, mt19937 &random_engine);
 void    generateRoomClusterNode(GameMap &map, mt19937 &random_engine, RoomIndexConfigFile &indexFile, MapRoom_Refrence parentRoom, uint32 clusterCount, real32 maxRoomDistance = 5, real32 minRoomDistance = 0, uint32 roomBoundaryExtend = 4);
 GameMap generateRandomGenericDungeonUsingMapFlow(mt19937 &random_engine, string roomdata_filename);
 

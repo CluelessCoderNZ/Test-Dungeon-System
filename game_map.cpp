@@ -867,10 +867,15 @@ void generateRoomClusterNode(GameMap &map, mt19937 &random_engine, RoomIndexConf
         }
     }
 
-    generateGraphMap(map, clusterRoomList, random_engine);
+    vector<MapRoom_GraphEdge> clusterGraphMap;
+
+    generateGraphMap(map, clusterGraphMap, clusterRoomList, random_engine);
+    createHallwaysFromGraphMap(map, clusterGraphMap, 5, 1);
+
+    map.graphMap.insert(map.graphMap.begin(), clusterGraphMap.begin(), clusterGraphMap.end());
 }
 
-void generateGraphMap(GameMap &map, vector<uint32> &roomList, mt19937 &random_engine)
+void generateGraphMap(GameMap &map, vector<MapRoom_GraphEdge> &outputMap, vector<uint32> &roomList, mt19937 &random_engine)
 {
     // Create list of all door points
     vector<Vec2f> doorPoints;
@@ -979,7 +984,6 @@ void generateGraphMap(GameMap &map, vector<uint32> &roomList, mt19937 &random_en
 
     // Generate mininium spanning tree from graph map
     // ----------------------------------------------
-    vector<MapRoom_GraphEdge> mstGraphMap;
     uniform_real_distribution<real32> dist_real32(0.0f,1.0f);
 
     // Generate disjointed set of rooms to organise connections
@@ -1027,10 +1031,10 @@ void generateGraphMap(GameMap &map, vector<uint32> &roomList, mt19937 &random_en
                 // This is to make loops more intresting
                 uint32 min_current_room_id = min(sortedGraphMap[i].p1.room.id, sortedGraphMap[i].p2.room.id);
                 uint32 max_current_room_id = max(sortedGraphMap[i].p1.room.id, sortedGraphMap[i].p2.room.id);
-                for(uint32 j = 0;j < mstGraphMap.size(); j++)
+                for(uint32 j = 0;j < outputMap.size(); j++)
                 {
-                    uint32 min_exists_room_id = min(mstGraphMap[j].p1.room.id, mstGraphMap[j].p2.room.id);
-                    uint32 max_exists_room_id = max(mstGraphMap[j].p1.room.id, mstGraphMap[j].p2.room.id);
+                    uint32 min_exists_room_id = min(outputMap[j].p1.room.id, outputMap[j].p2.room.id);
+                    uint32 max_exists_room_id = max(outputMap[j].p1.room.id, outputMap[j].p2.room.id);
 
                     if(min_current_room_id == min_exists_room_id &&
                        max_current_room_id == max_exists_room_id)
@@ -1053,8 +1057,8 @@ void generateGraphMap(GameMap &map, vector<uint32> &roomList, mt19937 &random_en
                     }
                 }
 
-                mstGraphMap.push_back(sortedGraphMap[i]);
-                mstGraphMap[mstGraphMap.size()-1].is_main_branch = !allowLoop;
+                outputMap.push_back(sortedGraphMap[i]);
+                outputMap[outputMap.size()-1].is_main_branch = !allowLoop;
 
                 roomDoorID id;
                 id.door = sortedGraphMap[i].p1.doorID;
@@ -1066,9 +1070,191 @@ void generateGraphMap(GameMap &map, vector<uint32> &roomList, mt19937 &random_en
             }
         }
     }
+}
 
-    // Insert graph map to final
-    map.graphMap.insert(map.graphMap.end(), mstGraphMap.begin(), mstGraphMap.end());
+void createHallwaysFromGraphMap(GameMap &map, vector<MapRoom_GraphEdge> &graphMap, uint32 hallwayWidth, uint32 hallwayWallSize)
+{
+    uint32 roomGroupStart = map.room.size();
+
+    for(uint32 i = 0; i < graphMap.size(); i++)
+    {
+        vector<sf::Vector2i> path;
+
+        /*bool           createMidIntersection = false;
+        sf::Vector2i   midpoint = sf::Vector2i((graphMap[i].p1.point.x+graphMap[i].p2.point.x)/2,(graphMap[i].p1.point.y+graphMap[i].p2.point.y)/2);
+
+        if(kMapDirectionNormals[graphMap[i].p1.doorDirection].x + kMapDirectionNormals[graphMap[i].p2.doorDirection].x == 0 &&
+           kMapDirectionNormals[graphMap[i].p1.doorDirection].y + kMapDirectionNormals[graphMap[i].p2.doorDirection].y == 0 &&
+           !doesRectContainRoom(map, sf::IntRect(midpoint.x-hallwayWallSize, midpoint.y-hallwayWallSize, hallwayWidth, hallwayWidth)))
+        {
+            createMidIntersection=true;
+        }
+
+        if(createMidIntersection)
+        {
+            path = getRoomToRoomPath(map, sf::Vector2u(hallwayWidth, hallwayWidth), graphMap[i]);
+        }else{
+            path = getRoomToRoomPath(map, sf::Vector2u(hallwayWidth, hallwayWidth), graphMap[i]);
+        }*/
+        path = getRoomToRoomPath(map, sf::Vector2u(hallwayWidth, hallwayWidth), graphMap[i]);
+
+        graphMap[i].graphPath=path;
+
+
+        int32 LAST_MIN_X, LAST_MIN_Y, LAST_MAX_X, LAST_MAX_Y;
+
+        // Create Hallway Rooms
+        for(uint32 j = 1; j < path.size(); j++)
+        {
+            // Room Size
+            int32 MIN_X = min(path[j].x, path[j-1].x);
+            int32 MIN_Y = min(path[j].y, path[j-1].y);
+            int32 MAX_X = max(path[j].x, path[j-1].x) + hallwayWidth;
+            int32 MAX_Y = max(path[j].y, path[j-1].y) + hallwayWidth;
+
+            int32 NonAdjusted_MIN_X = MIN_X;
+            int32 NonAdjusted_MAX_X = MAX_X;
+            int32 NonAdjusted_MIN_Y = MIN_Y;
+            int32 NonAdjusted_MAX_Y = MAX_Y;
+
+            // Last Room cropping
+            if(j > 1)
+            {
+                if(MAX_X - MIN_X == hallwayWidth)
+                {
+                    // NORTH
+                    if(path[j].y == MIN_Y)
+                    {
+                        MAX_Y = LAST_MIN_Y;
+                    // SOUTH
+                    }else{
+                        MIN_Y = LAST_MAX_Y;
+                    }
+                }else{
+                    // WEST
+                    if(path[j].x == MIN_X)
+                    {
+                        MAX_X = LAST_MIN_X;
+                    // EAST
+                    }else{
+                        MIN_X = LAST_MAX_X;
+                    }
+                }
+            }
+
+            if(MAX_X - MIN_X > 0 && MAX_Y - MIN_Y > 0)
+            {
+                // Create Room of walls
+                MapRoom room = createRoom(sf::Vector2u(MAX_X - MIN_X, MAX_Y - MIN_Y), 2);
+                room.room_group = roomGroupStart+i;
+
+                room.bounds.left = MIN_X;
+                room.bounds.top  = MIN_Y;
+
+                map.room.push_back(room);
+
+                // Connect To Start Room
+                MapRoomConnection connection;
+                connection.primaryRoom.id   = graphMap[i].p2.room.id;
+                connection.secondaryRoom.id = map.room.size()-1;
+                map.room[connection.primaryRoom.id].connection.push_back(connection);
+                swap(connection.primaryRoom.id,connection.secondaryRoom.id);
+                map.room[connection.primaryRoom.id].connection.push_back(connection);
+
+                // Connect to last hallway
+                for(uint32 x = 1; x < j; x++)
+                {
+                    connection.primaryRoom.id   = map.room.size()-1;
+                    connection.secondaryRoom.id = map.room.size()-x-1;
+                    map.room[connection.primaryRoom.id].connection.push_back(connection);
+                    swap(connection.primaryRoom.id,connection.secondaryRoom.id);
+                    map.room[connection.primaryRoom.id].connection.push_back(connection);
+                }
+
+                // Connect To Target Room
+                connection.primaryRoom.id   = graphMap[i].p1.room.id;
+                connection.secondaryRoom.id = map.room.size()-1;
+                map.room[connection.primaryRoom.id].connection.push_back(connection);
+                swap(connection.primaryRoom.id,connection.secondaryRoom.id);
+                map.room[connection.primaryRoom.id].connection.push_back(connection);
+
+                // Set Last Values for next iteration cropping
+                LAST_MIN_X = MIN_X;
+                LAST_MAX_X = MAX_X;
+                LAST_MIN_Y = MIN_Y;
+                LAST_MAX_Y = MAX_Y;
+            }
+        }
+
+        // Clear hallway paths
+        for(uint32 j = 1; j < path.size(); j++)
+        {
+            // Hallway Empty Path
+            int32 MIN_X = min(path[j].x, path[j-1].x) + hallwayWallSize;
+            int32 MIN_Y = min(path[j].y, path[j-1].y) + hallwayWallSize;
+            int32 MAX_X = max(path[j].x, path[j-1].x) + hallwayWidth - hallwayWallSize*2;
+            int32 MAX_Y = max(path[j].y, path[j-1].y) + hallwayWidth - hallwayWallSize*2;
+
+            for(uint32 y = MIN_Y; y <= MAX_Y; y++)
+            {
+                for(uint32 x = MIN_X; x <= MAX_X; x++)
+                {
+                    setTileFromGlobalPos(map, sf::Vector2i(x,y), 1);
+                }
+            }
+        }
+
+        // Clear Entrance and Exit
+        sf::IntRect roomConnectorBlock;
+        switch(graphMap[i].p1.doorDirection)
+        {
+            case DIR_NORTH:
+            {
+                roomConnectorBlock = sf::IntRect(graphMap[i].p1.point.x,graphMap[i].p1.point.y-hallwayWallSize,
+                                                 hallwayWidth-hallwayWallSize*2, hallwayWallSize+1);
+            }break;
+            case DIR_SOUTH:
+            {
+                roomConnectorBlock = sf::IntRect(graphMap[i].p1.point.x,graphMap[i].p1.point.y,
+                                                 hallwayWidth-hallwayWallSize*2, hallwayWallSize+1);
+            }break;
+            case DIR_EAST:
+            {
+                roomConnectorBlock = sf::IntRect(graphMap[i].p1.point.x,graphMap[i].p1.point.y,
+                                                 hallwayWallSize+1,hallwayWidth-hallwayWallSize*2);
+            }break;
+            case DIR_WEST:
+            {
+                roomConnectorBlock = sf::IntRect(graphMap[i].p1.point.x-hallwayWallSize,graphMap[i].p1.point.y,
+                                                 hallwayWallSize+1,hallwayWidth-hallwayWallSize*2);
+            }break;
+        }
+        setTileAreaFromGlobalPos(map, roomConnectorBlock, 1);
+        switch(graphMap[i].p2.doorDirection)
+        {
+            case DIR_NORTH:
+            {
+                roomConnectorBlock = sf::IntRect(graphMap[i].p2.point.x,graphMap[i].p2.point.y-hallwayWallSize,
+                                                 hallwayWidth-hallwayWallSize*2, hallwayWallSize+1);
+            }break;
+            case DIR_SOUTH:
+            {
+                roomConnectorBlock = sf::IntRect(graphMap[i].p2.point.x,graphMap[i].p2.point.y,
+                                                 hallwayWidth-hallwayWallSize*2, hallwayWallSize+1);
+            }break;
+            case DIR_EAST:
+            {
+                roomConnectorBlock = sf::IntRect(graphMap[i].p2.point.x,graphMap[i].p2.point.y,
+                                                 hallwayWallSize+1,hallwayWidth-hallwayWallSize*2);
+            }break;
+            case DIR_WEST:
+            {
+                roomConnectorBlock = sf::IntRect(graphMap[i].p2.point.x-hallwayWallSize,graphMap[i].p2.point.y,
+                                                 hallwayWallSize+1,hallwayWidth-hallwayWallSize*2);
+            }break;
+        }
+        setTileAreaFromGlobalPos(map, roomConnectorBlock, 1);
+    }
 }
 
 GameMap generateRandomGenericDungeonUsingMapFlow(mt19937 &random_engine, string roomdata_filename)
@@ -1084,9 +1270,9 @@ GameMap generateRandomGenericDungeonUsingMapFlow(mt19937 &random_engine, string 
     MapRoom_Refrence ref;
     ref.id = 0;
 
-    generateRoomClusterNode(map, random_engine, indexFile, ref, 50, 8, 18, 2);
+    generateRoomClusterNode(map, random_engine, indexFile, ref, 50, 8, 18, 5);
     ref.id = 50;
-    generateRoomClusterNode(map, random_engine, indexFile, ref, 50, 8, 18, 2);
+    generateRoomClusterNode(map, random_engine, indexFile, ref, 50, 8, 18, 5);
 
     /*
         Pseudo Code

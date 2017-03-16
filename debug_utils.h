@@ -59,7 +59,7 @@ struct DebugStateInformation
     bool     display_RoomBoundaries=true;
     bool     display_RoomGraph=true;
     bool     display_TileGrid=false;
-    bool     display_RoomID=false;
+    bool     display_RoomID=true;
     bool     display_roomDifficulty=false;
     bool     display_RoomConnections=false;
 
