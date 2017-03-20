@@ -398,14 +398,8 @@ void updateDebugState(GameState &state, InputState input)
             }
         }
     }
-    // HACK(Connor): Temp graph flow rendering
-    static uint32 seed = 0;
-    //if(seed==0)
-        seed = time(NULL)/10;
-    mt19937     random_engine(seed);
-    MapFlowGraph::Node node;
-    node = MapFlowGraph::generateGraph(random_engine);
-    MapFlowGraph::renderGraphNode(state.window, &node, sf::Vector2f(18,18));
+    
+    MapFlowGraph::renderGraphNode(state.window, &state.current_map.graphFlow, sf::Vector2f(18,18));
 
 
     if(state.debug.display_FPS)

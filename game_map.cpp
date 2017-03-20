@@ -85,6 +85,9 @@ MapRoom loadTiledRoom_JSON(string filename)
                                 if(root["layers"][i]["objects"][j].isMember("type") && root["layers"][i]["objects"][j]["type"].isString())
                                 {
                                     item.type = root["layers"][i]["objects"][j]["type"].asString();
+
+                                    if(item.type == "Door")
+                                        output.doorsFree++;
                                 }
                                 if(root["layers"][i]["objects"][j].isMember("properties") && root["layers"][i]["objects"][j]["properties"].isArray())
                                 {
@@ -813,12 +816,14 @@ GameMap generateRandomGenericDungeon(uint32 seed, string roomdata_filename)
     return map;
 }
 
-void generateRoomClusterNode(GameMap &map, mt19937 &random_engine, RoomIndexConfigFile &indexFile, MapRoom_Refrence parentRoom, uint32 clusterCount, real32 maxRoomDistance, real32 minRoomDistance, uint32 roomBoundaryExtend)
+bool generateRoomClusterNode(GameMap &map, mt19937 &random_engine, RoomIndexConfigFile &indexFile, MapRoom_Refrence parentRoom, uint32 clusterCount, real32 maxRoomDistance, real32 minRoomDistance, uint32 roomBoundaryExtend, MapRoom *enforceRoom)
 {
     vector<uint32> clusterRoomList;
     uniform_real_distribution<real32> dist_real32(0.0f,1.0f);
     uint32 startIndex = map.room.size();
     clusterRoomList.push_back(parentRoom.id);
+
+    uint32 failCount = 0;
 
     while(map.room.size()-startIndex < clusterCount)
     {
@@ -831,7 +836,13 @@ void generateRoomClusterNode(GameMap &map, mt19937 &random_engine, RoomIndexConf
         else
             targetRoom = targetRoom-1+startIndex;
 
-        MapRoom room = loadRoomFromChanceSplit(indexFile, dist_real32(random_engine));
+        MapRoom room;
+        if(enforceRoom == NULL)
+        {
+            room = loadRoomFromChanceSplit(indexFile, dist_real32(random_engine));
+        }else{
+            room = *enforceRoom;
+        }
         real32 angle = dist_real32(random_engine)*kTAU;
 
         sf::Vector2f perimeterTargetRoomPoint = getPerimeterPointByAngle(map.room[targetRoom].bounds, angle);
@@ -862,8 +873,15 @@ void generateRoomClusterNode(GameMap &map, mt19937 &random_engine, RoomIndexConf
         // Add room to list
         if(NoCollision)
         {
+            room.room_group = map.room.size()-1;
             map.room.push_back(room);
             clusterRoomList.push_back(map.room.size()-1);
+        }else if(targetRoom = parentRoom.id){
+            failCount++;
+            if(failCount > 10)
+            {
+                return false;
+            }
         }
     }
 
@@ -873,6 +891,8 @@ void generateRoomClusterNode(GameMap &map, mt19937 &random_engine, RoomIndexConf
     createHallwaysFromGraphMap(map, clusterGraphMap, 5, 1);
 
     map.graphMap.insert(map.graphMap.begin(), clusterGraphMap.begin(), clusterGraphMap.end());
+
+    return true;
 }
 
 void generateGraphMap(GameMap &map, vector<MapRoom_GraphEdge> &outputMap, vector<uint32> &roomList, mt19937 &random_engine)
@@ -884,7 +904,7 @@ void generateGraphMap(GameMap &map, vector<MapRoom_GraphEdge> &outputMap, vector
         uint32 i = roomList[listID];
         for(int j = 0; j < map.room[i].metadata.size(); j++)
         {
-            if(map.room[i].metadata[j].type == "Door")
+            if(map.room[i].metadata[j].type == "Door" && !map.room[i].metadata[j].data.isMember("InUse"))
             {
                 doorPoints.push_back(Vec2f(map.room[i].bounds.left + map.room[i].metadata[j].position.x, map.room[i].bounds.top + map.room[i].metadata[j].position.y));
             }
@@ -893,8 +913,15 @@ void generateGraphMap(GameMap &map, vector<MapRoom_GraphEdge> &outputMap, vector
 
     // Generate door node edges through triangulation
     Delaunay triangulation;
-    triangulation.triangulate(doorPoints);
-    vector<Edge> rawedges = triangulation.getEdges();
+    vector<Edge> rawedges;
+
+    if(doorPoints.size() > 0)
+    {
+        triangulation.triangulate(doorPoints);
+        rawedges = triangulation.getEdges();
+    }
+
+
 
     vector<MapRoom_GraphEdge> sortedGraphMap;
 
@@ -1056,7 +1083,8 @@ void generateGraphMap(GameMap &map, vector<MapRoom_GraphEdge> &outputMap, vector
                         disjointedSetRoomParents[x] = newSet;
                     }
                 }
-
+                map.room[sortedGraphMap[i].p1.room.id].doorsFree--;
+                map.room[sortedGraphMap[i].p2.room.id].doorsFree--;
                 outputMap.push_back(sortedGraphMap[i]);
                 outputMap[outputMap.size()-1].is_main_branch = !allowLoop;
 
@@ -1064,9 +1092,13 @@ void generateGraphMap(GameMap &map, vector<MapRoom_GraphEdge> &outputMap, vector
                 id.door = sortedGraphMap[i].p1.doorID;
                 id.room = sortedGraphMap[i].p1.room.id;
                 inUseDoors.push_back(id);
+                map.room[id.room].metadata[id.door].data["InUse"] = true;
                 id.door = sortedGraphMap[i].p2.doorID;
                 id.room = sortedGraphMap[i].p2.room.id;
                 inUseDoors.push_back(id);
+                map.room[id.room].metadata[id.door].data["InUse"] = true;
+
+
             }
         }
     }
@@ -1257,22 +1289,125 @@ void createHallwaysFromGraphMap(GameMap &map, vector<MapRoom_GraphEdge> &graphMa
     }
 }
 
+
+MapRoom_Refrence getRandomOuterEdgeRoomFromGroup(GameMap &map, mt19937 &random_engine, uint32 offsetRoom, uint32 roomListLength, real32 precentileLowerLimit, real32 precentileUpperLimit)
+{
+    sf::Vector2f centerMass;
+    for(uint32 i = offsetRoom; i < offsetRoom+roomListLength; i++)
+    {
+        centerMass = centerMass + getCenterOfRect(map.room[i].bounds);
+    }
+    centerMass.x /= roomListLength;
+    centerMass.y /= roomListLength;
+
+    vector<uint32> sortedRoomID;
+    vector<real32> sortedRoomDistance;
+    for(uint32 i = offsetRoom; i < offsetRoom+roomListLength; i++)
+    {
+        real32 distance = getDistance(getCenterOfRect(map.room[i].bounds), centerMass);
+
+        int32 insertPosition = -1;
+        for(uint32 j = 0; j < sortedRoomID.size(); j++)
+        {
+            if(distance < sortedRoomDistance[j])
+            {
+                insertPosition = j;
+                break;
+            }
+        }
+
+        if(insertPosition >= 0)
+        {
+            sortedRoomID.insert(sortedRoomID.begin()+insertPosition, i);
+            sortedRoomDistance.insert(sortedRoomDistance.begin()+insertPosition, distance);
+        }else{
+            sortedRoomID.push_back(i);
+            sortedRoomDistance.push_back(distance);
+        }
+    }
+
+    uint32 lowerPrecentileIndex = floor((roomListLength-1) * precentileLowerLimit);
+    uint32 upperPrecentileIndex = ceil((roomListLength-1) * precentileUpperLimit);
+    uniform_int_distribution<uint32> dist_indexRange(lowerPrecentileIndex, upperPrecentileIndex);
+
+    MapRoom_Refrence ref;
+    ref.id = dist_indexRange(random_engine);
+    return ref;
+}
+
+bool generateDungeonNodeSection(GameMap &map, mt19937 &random_engine, RoomIndexConfigFile &indexFile, MapFlowGraph::Node *parent, MapRoom_Refrence ref)
+{
+    cout << parent->layer << endl;
+
+    uint32 startRoomOffset = map.room.size();
+    bool   generationComplete = true;
+    switch(parent->type)
+    {
+        case MapFlowGraph::NODE_START:
+        {
+            generationComplete = generateRoomClusterNode(map, random_engine, indexFile, ref, 5, 14, 30, 5);
+            cout << "START" << endl;
+        }break;
+        case MapFlowGraph::NODE_END:
+        {
+            generationComplete = generateRoomClusterNode(map, random_engine, indexFile, ref, 1, 14, 30, 5);
+            cout << "END" << endl;
+        }break;
+        case MapFlowGraph::NODE_JOINT:
+        {
+            generationComplete = generateRoomClusterNode(map, random_engine, indexFile, ref, 5, 14, 30, 5);
+            cout << "JOINT" << endl;
+        }break;
+        case MapFlowGraph::NODE_KEY:
+        {
+            generationComplete = generateRoomClusterNode(map, random_engine, indexFile, ref, 1, 14, 30, 5);
+            cout << "KEY" << endl;
+        }break;
+    }
+
+    uint32 endRoomOffset = map.room.size()-startRoomOffset;
+
+    if(generationComplete == false)
+        return false;
+
+    for(uint32 i = 0; i < parent->children.size(); i++)
+    {
+        cout << "child: " << i << endl;
+
+        bool shouldRepeat = true;
+        while(shouldRepeat)
+        {
+            uint32 iteration=0;
+            ref = getRandomOuterEdgeRoomFromGroup(map, random_engine, startRoomOffset, endRoomOffset, 0.7, 0.9);
+            while(map.room[ref.id].doorsFree == 0)
+            {
+                ref = getRandomOuterEdgeRoomFromGroup(map, random_engine, startRoomOffset, endRoomOffset, max(0.7-iteration*0.1, 0.0), min(0.9+iteration*0.01,1.0));
+                iteration++;
+            }
+            cout << "Door Left: " << map.room[ref.id].doorsFree << endl;
+
+            shouldRepeat = !generateDungeonNodeSection(map, random_engine, indexFile, parent->children[i], ref);
+        }
+    }
+
+    return true;
+}
+
 GameMap generateRandomGenericDungeonUsingMapFlow(mt19937 &random_engine, string roomdata_filename)
 {
     GameMap map;
     RoomIndexConfigFile indexFile = loadRoomIndexConfigFile(roomdata_filename);
-
     uniform_real_distribution<real32> dist_real32(0.0f,1.0f);
+
+    map.graphFlow = MapFlowGraph::generateGraph(random_engine);
 
     map.room.push_back(loadRoomFromChanceSplit(indexFile, 0));
     map.room[0].bounds.left = 5000;
     map.room[0].bounds.top  = 5000;
     MapRoom_Refrence ref;
     ref.id = 0;
+    generateDungeonNodeSection(map, random_engine, indexFile, &map.graphFlow, ref);
 
-    generateRoomClusterNode(map, random_engine, indexFile, ref, 50, 8, 18, 5);
-    ref.id = 50;
-    generateRoomClusterNode(map, random_engine, indexFile, ref, 50, 8, 18, 5);
 
     /*
         Pseudo Code

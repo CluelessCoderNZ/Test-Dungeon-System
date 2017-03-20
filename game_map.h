@@ -85,6 +85,7 @@ struct MapRoom
     uint32                          room_type = 0;
     uint32                          room_group = 0;
     uint32                          steps_fromHomeRoom=0;
+    uint32                          doorsFree = 0;
     vector<MapRoomConnection>       connection;
     sf::IntRect                     bounds;
     byte*                           tilemap;
@@ -151,7 +152,10 @@ GameMap generateRandomGenericDungeon(uint32 seed, string roomdata_filename);
 
 void    createHallwaysFromGraphMap(GameMap &map, vector<MapRoom_GraphEdge> &graphMap, uint32 hallwayWidth=5, uint32 wallThickness=1);
 void    generateGraphMap(GameMap &map, vector<MapRoom_GraphEdge> &graphMap, vector<uint32> &roomList, mt19937 &random_engine);
-void    generateRoomClusterNode(GameMap &map, mt19937 &random_engine, RoomIndexConfigFile &indexFile, MapRoom_Refrence parentRoom, uint32 clusterCount, real32 maxRoomDistance = 5, real32 minRoomDistance = 0, uint32 roomBoundaryExtend = 4);
+bool    generateRoomClusterNode(GameMap &map, mt19937 &random_engine, RoomIndexConfigFile &indexFile, MapRoom_Refrence parentRoom, uint32 clusterCount, real32 maxRoomDistance = 5, real32 minRoomDistance = 0, uint32 roomBoundaryExtend = 4, MapRoom *enforceRoom=NULL);
+bool    generateDungeonNodeSection(GameMap &map, mt19937 &random_engine, RoomIndexConfigFile &indexFile, MapFlowGraph::Node *parent, MapRoom_Refrence start_ref);
+MapRoom_Refrence getRandomOuterEdgeRoomFromGroup(GameMap &map, mt19937 &random_engine, uint32 offsetRoom, uint32 roomListLength, real32 precentileLowerLimit, real32 precentileUpperLimit);
+
 GameMap generateRandomGenericDungeonUsingMapFlow(mt19937 &random_engine, string roomdata_filename);
 
 MapRoom createRoom(sf::Vector2u size, byte tile_type = 0);
