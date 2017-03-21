@@ -1406,7 +1406,8 @@ GameMap generateRandomGenericDungeonUsingMapFlow(mt19937 &random_engine, string 
     map.room[0].bounds.top  = 5000;
     MapRoom_Refrence ref;
     ref.id = 0;
-    generateDungeonNodeSection(map, random_engine, indexFile, &map.graphFlow, ref);
+    generateRoomClusterNode(map, random_engine, indexFile, ref, 50, 14, 30, 5);
+    //generateDungeonNodeSection(map, random_engine, indexFile, &map.graphFlow, ref);
 
 
     /*
