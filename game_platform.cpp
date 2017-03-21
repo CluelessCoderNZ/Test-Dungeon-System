@@ -178,7 +178,7 @@ void GAME_UPDATE_AND_RENDER(GameState &state, InputState input, real32 t)
 
     // Viewport
     state.viewZoom *= 1 - input.mouseWheel.delta*0.05;
-    state.viewZoom = min(max(state.viewZoom ,(real32)0.1), (real32)6.0);
+    state.viewZoom = min(max(state.viewZoom ,(real32)0.1), (real32)20.0);
 
     state.gameview.reset(sf::FloatRect(0, 0, state.window.getSize().x, state.window.getSize().y));
     state.screenView = state.gameview;
@@ -255,7 +255,8 @@ void updateDebugState(GameState &state, InputState input)
     static uint32 debug_mapReloadIteration = 0;
     if(input.action(INPUT_DEBUG_ACTION_1).state == BUTTON_RELEASED)
     {
-        state.current_map = generateRandomGenericDungeon(time(NULL)+debug_mapReloadIteration, "Resources/World_Data/Room_Types/room_data.json");
+        mt19937 random_engine(time(NULL)+debug_mapReloadIteration);
+        state.current_map = generateRandomGenericDungeonUsingMapFlow(random_engine, "Resources/World_Data/Room_Types/room_data.json");
         debug_mapReloadIteration++;
     }
 
@@ -397,15 +398,8 @@ void updateDebugState(GameState &state, InputState input)
             }
         }
     }
-    // HACK(Connor): Temp graph flow rendering
-    static uint32 seed = 0;
-    //if(seed==0)
-        seed = time(NULL)/10;
-    mt19937     random_engine(seed);
-    cout << "Graph Seed:" << seed << endl;
-    MapFlowGraph::Node node;
-    node = MapFlowGraph::generateGraph(random_engine);
-    MapFlowGraph::renderGraphNode(state.window, &node, sf::Vector2f(18,18));
+    
+    MapFlowGraph::renderGraphNode(state.window, &state.current_map.graphFlow, sf::Vector2f(18,18));
 
 
     if(state.debug.display_FPS)
