@@ -84,6 +84,26 @@ string variableToStr(bool value)
 void initDebugState(DebugStateInformation &debug)
 {
     debug.font.loadFromFile("Resources/Fonts/Debug.woff");
+
+    // Initalize UI State
+    debug.ui.rootNode.children.push_back(new DebugMenuNode("Map"));
+        debug.ui.rootNode.children[0]->children.push_back(new DebugMenuNode("Room"));
+            debug.ui.rootNode.children[0]->children[0]->children.push_back(new DebugMenuNode("Display_TileID", &debug.display_TileID));
+            debug.ui.rootNode.children[0]->children[0]->children.push_back(new DebugMenuNode("Display_TileAO", &debug.display_TileAO));
+        debug.ui.rootNode.children[0]->children.push_back(new DebugMenuNode("Display_RoomBoundaries", &debug.display_RoomBoundaries));
+        debug.ui.rootNode.children[0]->children.push_back(new DebugMenuNode("Display_RoomGraph", &debug.display_RoomGraph));
+        debug.ui.rootNode.children[0]->children.push_back(new DebugMenuNode("Display_TileGrid", &debug.display_TileGrid));
+        debug.ui.rootNode.children[0]->children.push_back(new DebugMenuNode("Display_RoomID", &debug.display_RoomID));
+        debug.ui.rootNode.children[0]->children.push_back(new DebugMenuNode("Display_RoomConnections", &debug.display_RoomConnections));
+
+    debug.ui.rootNode.children.push_back(new DebugMenuNode("Entity"));
+        debug.ui.rootNode.children[1]->children.push_back(new DebugMenuNode("Display_SelectedEntity", &debug.display_memorySelectedEntity));
+        debug.ui.rootNode.children[1]->children.push_back(new DebugMenuNode("Follow_SelectedEntity", &debug.follow_memorySelectedEntity));
+        debug.ui.rootNode.children[1]->children.push_back(new DebugMenuNode("OpenEntityCache", &debug.memoryAnalyzer.isEnabled));
+
+    debug.ui.rootNode.children.push_back(new DebugMenuNode("System"));
+        debug.ui.rootNode.children[2]->children.push_back(new DebugMenuNode("Display_FPS", &debug.display_FPS));
+
 }
 
 void updateDebugMemoryAnalyzer(DebugStateInformation &debug, GameMap &map, InputState &input)
@@ -379,6 +399,80 @@ void updateDebugMemoryAnalyzer(DebugStateInformation &debug, GameMap &map, Input
 
         debug.memoryAnalyzer.window.display();
     }
+}
+
+void DebugMenuNode::draw(sf::RenderWindow &window, InputState &input, sf::Text &text, uint32 margin, uint32 indent)
+{
+    // String Setup
+    string textStr = display_name;
+    switch(type)
+    {
+        case DEBUG_UI_NODE_ITEM_BOOL:
+        {
+            textStr = textStr+": "+variableToStr(*bool_pointer);
+        }break;
+
+        case DEBUG_UI_NODE_SUBMENU:
+        {
+            if (isSubMenuOpen)
+            {
+                textStr = "V "+textStr;
+            }else{
+                textStr = "> "+textStr;
+            }
+        }break;
+    }
+    text.setString(textStr);
+    text.setOutlineColor(textOutlineColour);
+
+    // Mouse Input
+    if(text.getGlobalBounds().contains(input.mouse_screenPos.x, input.mouse_screenPos.y))
+    {
+        if(input.action(MOUSE_LEFTCLICK).state == BUTTON_PRESSED)
+        {
+            switch(type)
+            {
+                case DEBUG_UI_NODE_SUBMENU:
+                {
+                    isSubMenuOpen = !isSubMenuOpen;
+                }break;
+                case DEBUG_UI_NODE_ITEM_BOOL:
+                {
+                    *bool_pointer = !(*bool_pointer);
+                }break;
+            }
+        }else{
+            text.setFillColor(textHighlightColour);
+        }
+    }else{
+        text.setFillColor(textColour);
+    }
+    window.draw(text);
+
+    // Render Children
+    text.setPosition(text.getPosition().x + indent, text.getPosition().y + margin+text.getGlobalBounds().height);
+    if(type == DEBUG_UI_NODE_SUBMENU and isSubMenuOpen == true)
+    {
+        for(uint32 i = 0; i < children.size(); i++)
+        {
+            children[i]->draw(window, input, text, margin, indent);
+            string test = text.getString();
+        }
+    }
+    text.setPosition(text.getPosition().x - indent, text.getPosition().y);
+}
+
+sf::Vector2f DebugMenuUIState::draw(sf::RenderWindow &window, InputState &input, sf::Font &font)
+{
+    sf::Text text;
+    text.setFont(font);
+    text.setCharacterSize(textSize);
+    text.setPosition(position.x, position.y);
+    text.setOutlineThickness(2);
+
+    rootNode.draw(window, input, text, margin, indent);
+
+    return text.getPosition();
 }
 
 

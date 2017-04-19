@@ -70,7 +70,7 @@ void RenderWholeMap(Entity_State_Controller &controller, GameState &state)
                         state.tileset.tile[tile.tileID].sprite.setPosition(state.current_map.tileSize.x * (x+state.current_map.room[room_index].bounds.left), state.current_map.tileSize.y * (y+state.current_map.room[room_index].bounds.top));
                         state.window.draw(state.tileset.tile[tile.tileID].sprite);
 
-
+                        // Ambient Occlusion
                         for(uint32 i = 0; i < 8; i++)
                         {
                             if(tile.AO & (1 << i))
@@ -126,9 +126,9 @@ void GAME_UPDATE_AND_RENDER(GameState &state, InputState input, real32 t)
     }
 
     // Sim Region Check
-    if(getEntity(state.entity_controller, state.player).component & EC_POSITION)
+    if(getEntity(state.entity_controller, state.camera_follow).component & EC_POSITION)
     {
-        state.activeSimRoom = ((Entity_Component_Position*)getEntityComponent(state.entity_controller, state.player, EC_POSITION))->room;
+        state.activeSimRoom = ((Entity_Component_Position*)getEntityComponent(state.entity_controller, state.camera_follow, EC_POSITION))->room;
     }
 
     // Simulate sim room
@@ -149,16 +149,16 @@ void GAME_UPDATE_AND_RENDER(GameState &state, InputState input, real32 t)
     }
 
     // If camera entity room group changes then transition screen
-    if(getEntity(state.entity_controller, state.player).component & EC_POSITION && state.current_map.room[((Entity_Component_Position*)getEntityComponent(state.entity_controller, state.player, EC_POSITION))->room].room_group != state.cameraFollowInRoomGroup)
+    if(getEntity(state.entity_controller, state.camera_follow).component & EC_POSITION && state.current_map.room[((Entity_Component_Position*)getEntityComponent(state.entity_controller, state.camera_follow, EC_POSITION))->room].room_group != state.cameraFollowInRoomGroup)
     {
         state.roomTransitionStart = getLockedCameraCenterPosition(state.camera_fixedView, localRoomPositionToScreen(state.current_map, *((Entity_Component_Position*)getEntityComponent(state.entity_controller, state.camera_follow, EC_POSITION))), state.gameview.getSize());
 
-        state.camera_fixedView  = scaleRect(getRoomGroupBounds(state.current_map, state.current_map.room[((Entity_Component_Position*)getEntityComponent(state.entity_controller, state.player, EC_POSITION))->room].room_group), sf::Vector2f(state.current_map.tileSize.x, state.current_map.tileSize.y));
+        state.camera_fixedView  = scaleRect(getRoomGroupBounds(state.current_map, state.current_map.room[((Entity_Component_Position*)getEntityComponent(state.entity_controller, state.camera_follow, EC_POSITION))->room].room_group), sf::Vector2f(state.current_map.tileSize.x, state.current_map.tileSize.y));
         state.camera_fixedView.height += state.tileset.tileSize.y-state.current_map.tileSize.y;
         state.camera_fixedView.top    -= state.tileset.tileSize.y-state.current_map.tileSize.y;
 
         // If hallway extend view to include connected doors of rooms
-        if(state.current_map.room[((Entity_Component_Position*)getEntityComponent(state.entity_controller, state.player, EC_POSITION))->room].room_type==0)
+        if(state.current_map.room[((Entity_Component_Position*)getEntityComponent(state.entity_controller, state.camera_follow, EC_POSITION))->room].room_type==0)
         {
             state.camera_fixedView.left   -= state.current_map.tileSize.x;
             state.camera_fixedView.top    -= state.current_map.tileSize.y;
@@ -438,6 +438,7 @@ void updateDebugState(GameState &state, InputState input)
     }
 
     sf::Text additionalText;
+    additionalText.setPosition(state.debug.ui.draw(state.window, input, state.debug.font));
     additionalText.setFont(state.debug.font);
     additionalText.setFillColor(state.debug.colour_AdditionalInfo);
     additionalText.setCharacterSize(16);

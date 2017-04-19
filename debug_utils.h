@@ -46,32 +46,92 @@ struct DebugMemoryAnalyzerState
     Entity_State_Controller *controller;
 };
 
+enum DebugMenuNodeType
+{
+    DEBUG_UI_NODE_END,
+    DEBUG_UI_NODE_SUBMENU,
+    DEBUG_UI_NODE_ITEM_BOOL
+};
+
+struct DebugMenuNode
+{
+    string              display_name;
+    DebugMenuNodeType   type;
+
+    sf::Color           textColour            = sf::Color::White;
+    sf::Color           textHighlightColour   = sf::Color(255, 255, 125);
+    sf::Color           textOutlineColour     = sf::Color::Black;
+
+    union
+    {
+        bool  isSubMenuOpen;                // SUBMENU
+        bool* bool_pointer;                 // ITEM_BOOL
+    };
+
+    vector<DebugMenuNode*> children;
+
+    void draw(sf::RenderWindow &window, InputState &input, sf::Text &text, uint32 margin, uint32 indent);
+    DebugMenuNode(){}
+    ~DebugMenuNode()
+    {
+        for(uint32 i = 0; i < children.size(); i++)
+        {
+            delete children[i];
+        }
+    }
+    DebugMenuNode(string name)
+    {
+        display_name = name;
+        type         = DEBUG_UI_NODE_SUBMENU;
+        isSubMenuOpen= false;
+    }
+
+    DebugMenuNode(string name, bool* data)
+    {
+        display_name = name;
+        type         = DEBUG_UI_NODE_ITEM_BOOL;
+        bool_pointer = data;
+    }
+};
+
+struct DebugMenuUIState
+{
+    DebugMenuNode rootNode = DebugMenuNode("Debug Menu");
+    sf::Vector2f  position = sf::Vector2f(0,0);
+    uint32  margin=0;
+    uint32  indent=25;
+    uint32  textSize = 20;
+
+    sf::Vector2f draw(sf::RenderWindow &window, InputState &input, sf::Font &font);
+};
+
 struct DebugStateInformation
 {
     bool     isEnabled = false;
     DebugMemoryAnalyzerState memoryAnalyzer;
+    DebugMenuUIState         ui;
 
     sf::Font font;
     string   additionalInfo;
 
     // Entity Flags
-    bool     follow_memorySelectedEntity=true;
-    bool     display_memorySelectedEntity=true;
+    bool     follow_memorySelectedEntity=false;
+    bool     display_memorySelectedEntity=false;
 
     // System Flags
     bool     display_FPS=true;
 
     // Map Flags
-    bool     display_RoomBoundaries=true;
-    bool     display_RoomGraph=true;
+    bool     display_RoomBoundaries=false;
+    bool     display_RoomGraph=false;
     bool     display_TileGrid=false;
-    bool     display_RoomID=true;
+    bool     display_RoomID=false;
     bool     display_roomDifficulty=false;
     bool     display_RoomConnections=false;
 
     // Room Flags
-    bool    display_TileID=true;
-    bool    display_TileAO=true;
+    bool    display_TileID=false;
+    bool    display_TileAO=false;
 
 
     sf::Color colour_AdditionalInfo             = sf::Color::Yellow;
