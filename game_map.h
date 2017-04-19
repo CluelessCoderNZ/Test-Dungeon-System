@@ -80,6 +80,37 @@ struct RoomIndexConfigFile
     uint32      chanceWeightTotal = 0;
 };
 
+enum TileNeighbourDirection
+{
+    TILE_NONE = 0,
+    TILE_N    = 1 << 0,
+    TILE_NE   = 1 << 1,
+    TILE_E    = 1 << 2,
+    TILE_SE   = 1 << 3,
+    TILE_S    = 1 << 4,
+    TILE_SW   = 1 << 5,
+    TILE_W    = 1 << 6,
+    TILE_NW   = 1 << 7
+};
+const sf::Vector2i kTileNeighbourDirectionNormals[9] =
+{
+    sf::Vector2i(0 , 0),
+    sf::Vector2i(0 , 1),
+    sf::Vector2i(1 , 1),
+    sf::Vector2i(1 , 0),
+    sf::Vector2i(1 , -1),
+    sf::Vector2i(0 , -1),
+    sf::Vector2i(-1 , -1),
+    sf::Vector2i(-1 , 0),
+    sf::Vector2i(-1 , 1)
+};
+
+struct MapTile
+{
+    byte          tileID;
+    byte          AO = (byte)TILE_NONE;
+};
+
 struct MapRoom
 {
     uint32                          room_type = 0;
@@ -88,15 +119,15 @@ struct MapRoom
     uint32                          doorsFree = 0;
     vector<MapRoomConnection>       connection;
     sf::IntRect                     bounds;
-    byte*                           tilemap;
+    MapTile*                        tilemap;
     vector<room_metadata_item>      metadata;
 
     std::vector<Entity_Reference>   entity_list;
 
-    inline byte getTile(uint32 x, uint32 y)
+    inline MapTile getTile(uint32 x, uint32 y)
     {
         if(x >= bounds.width || y >= bounds.height)
-            return 0;
+            return MapTile();
         else
             return tilemap[bounds.width*y + x];
     }
@@ -159,6 +190,11 @@ MapRoom_Refrence getRandomOuterEdgeRoomFromGroup(GameMap &map, mt19937 &random_e
 GameMap generateRandomGenericDungeonUsingMapFlow(mt19937 &random_engine, string roomdata_filename);
 
 MapRoom createRoom(sf::Vector2u size, byte tile_type = 0);
+void    generateTileAO(MapRoom &room, Tileset &tileset, uint32 x, uint32 y);
+void    generateRoomAO(MapRoom &room, Tileset &tileset);
+void    generateMapAO(GameMap &map, Tileset &tileset);
+void    generateTilesetAOSprites(Tileset& tileset, sf::Vector2u floorTileSize, real32 shadowDistance=5, sf::Color shadowMaxColour=sf::Color(0,0,0,125), sf::Color shadowMinColour=sf::Color(0,0,0,0));
+
 
 sf::Vector2f relativeRoomPosition(GameMap &map, sf::Vector2f position, MapRoom_Refrence old_room, MapRoom_Refrence new_room);
 void    setRectTileArea(MapRoom &room, byte tile_id, sf::IntRect area);

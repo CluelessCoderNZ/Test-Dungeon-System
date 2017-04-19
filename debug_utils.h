@@ -3,6 +3,7 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <typeinfo>
+#include <bitset>
 #include <sstream>
 #include "entity.h"
 #include "game_platform.h"
@@ -51,11 +52,16 @@ struct DebugStateInformation
     DebugMemoryAnalyzerState memoryAnalyzer;
 
     sf::Font font;
+    string   additionalInfo;
 
+    // Entity Flags
     bool     follow_memorySelectedEntity=true;
     bool     display_memorySelectedEntity=true;
 
+    // System Flags
     bool     display_FPS=true;
+
+    // Map Flags
     bool     display_RoomBoundaries=true;
     bool     display_RoomGraph=true;
     bool     display_TileGrid=false;
@@ -63,7 +69,12 @@ struct DebugStateInformation
     bool     display_roomDifficulty=false;
     bool     display_RoomConnections=false;
 
-    sf::Color colour_fps                        = sf::Color::Yellow;
+    // Room Flags
+    bool    display_TileID=true;
+    bool    display_TileAO=true;
+
+
+    sf::Color colour_AdditionalInfo             = sf::Color::Yellow;
     sf::Color colour_roomBoundaries             = sf::Color::Green;
     sf::Color colour_roomGraph                  = sf::Color::Cyan;
     sf::Color colour_tilegrid                   = sf::Color(0,50,0);
@@ -78,6 +89,7 @@ struct DebugStateInformation
 
 string numToStr(real32 value, int32 sf = -1);
 string numToStr(int32 value);
+string binaryToStr(byte value);
 
 string variableToStr(sf::Vector2u  value);
 string variableToStr(sf::Vector2f  value);

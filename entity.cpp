@@ -274,11 +274,11 @@ void Entity_System_CollisionTilemap(Entity_State_Controller &controller, real32 
     {
         uint32 tileID_X = map.room[GET_EC_POSITION()->room].getTile
                         (GET_EC_POSITION()->position.x + GET_EC_VELOCITY()->velocity.x*t,
-                         GET_EC_POSITION()->position.y);
+                         GET_EC_POSITION()->position.y).tileID;
 
          uint32 tileID_Y = map.room[GET_EC_POSITION()->room].getTile
                          (GET_EC_POSITION()->position.x,
-                          GET_EC_POSITION()->position.y + GET_EC_VELOCITY()->velocity.y*t);
+                          GET_EC_POSITION()->position.y + GET_EC_VELOCITY()->velocity.y*t).tileID;
 
         if(tileset.tile[tileID_X].isSolid)
             GET_EC_VELOCITY()->velocity.x = 0;

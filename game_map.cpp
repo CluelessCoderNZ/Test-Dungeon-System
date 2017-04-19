@@ -35,7 +35,7 @@ MapRoom loadTiledRoom_CSV(string filename, sf::Vector2u size)
             string str_number;
             getline(line, str_number, ',');
 
-            output.tilemap[i++] = str2uint(str_number) + 1;
+            output.tilemap[i++].tileID = str2uint(str_number) + 1;
         }
     }
 
@@ -63,7 +63,7 @@ MapRoom loadTiledRoom_JSON(string filename)
                         {
                             for(int16 j = 0; j < root["layers"][i]["data"].size(); j++)
                             {
-                                output.tilemap[j] = root["layers"][i]["data"][j].asUInt();
+                                output.tilemap[j].tileID = root["layers"][i]["data"][j].asUInt();
                             }
                         }else{
                             // NOTE(Connor): Error handling
@@ -125,19 +125,19 @@ MapRoom loadTiledRoom_JSON(string filename)
 MapRoom loadTiledRoom(string filename, sf::Vector2u size)
 {
     string filetype = filename.substr(filename.find_last_of(".")+1);
+    MapRoom output = MapRoom();
 
     if(filetype == "csv")
     {
-        return loadTiledRoom_CSV(filename, size);
+        output = loadTiledRoom_CSV(filename, size);
     }else if(filetype == "json")
     {
-        return loadTiledRoom_JSON(filename);
+        output = loadTiledRoom_JSON(filename);
     }else{
         // NOTE(Connor): Error handling
         cout << "Error: Loading '"+filename+"' unknown filetype" << endl;
     }
-
-    return MapRoom();
+    return output;
 }
 
 MapRoom loadRoomFromChanceSplit(RoomIndexConfigFile &file, real32 splitPoint)
@@ -1453,14 +1453,123 @@ MapRoom createRoom(sf::Vector2u size, byte tile_type)
     MapRoom output;
     output.bounds.width  = size.x;
     output.bounds.height = size.y;
-    output.tilemap = new byte[size.x*size.y];
+    output.tilemap = new MapTile[size.x*size.y];
 
     for(uint32 i = 0; i < size.x*size.y; i++)
     {
-        output.tilemap[i] = tile_type;
+        output.tilemap[i].tileID = tile_type;
     }
 
     return output;
+}
+
+void generateTileAO(MapRoom &room, Tileset &tileset, uint32 x, uint32 y)
+{
+    room.tilemap[y*room.bounds.width+x].AO = 0;
+
+    if(tileset.tile[room.getTile(x, y).tileID].isFloor)
+    {
+        for(uint32 i = 1; i < 9; i++)
+        {
+            sf::Vector2i normal = kTileNeighbourDirectionNormals[i];
+            if(tileset.tile[room.getTile(x+normal.x, y+normal.y).tileID].isSolid)
+            {
+                room.tilemap[y*room.bounds.width+x].AO = room.tilemap[y*room.bounds.width+x].AO | (1 << (i-1));
+            }
+        }
+        // Corners Only Valid if not connected to tiles of similar direction
+        for (uint32 i = 0; i < 4; i++)
+        {
+            if ((room.tilemap[y*room.bounds.width+x].AO & (uint32)(1 << ((i*2+1)%8))) and ((room.tilemap[y*room.bounds.width+x].AO & (uint32)(1 << ((i*2)%8))) or (room.tilemap[y*room.bounds.width+x].AO & (uint32)(1 << ((i*2+2)%8)))))
+            {
+                room.tilemap[y*room.bounds.width+x].AO = room.tilemap[y*room.bounds.width+x].AO & ~(1 << ((i*2+1)%8));
+            }
+        }
+
+    }
+}
+
+void generateRoomAO(MapRoom &room, Tileset &tileset)
+{
+    for(uint32 y = 0; y < room.bounds.height; y++)
+    {
+        for(uint32 x = 0; x < room.bounds.width; x++)
+        {
+            generateTileAO(room, tileset, x, y);
+        }
+    }
+}
+
+void generateMapAO(GameMap &map, Tileset &tileset)
+{
+    for(uint32 i = 0; i < map.room.size(); i++)
+    {
+        generateRoomAO(map.room[i], tileset);
+    }
+}
+
+void generateTilesetAOSprites(Tileset& tileset, sf::Vector2u size, real32 shadowLength, sf::Color shadowMaxColour, sf::Color shadowMinColour)
+{
+    sf::Vector2f origin = sf::Vector2f(0,0);
+    sf::Vector2f dist   = sf::Vector2f(shadowLength, shadowLength);
+
+    tileset.AO_Sprites.clear();
+    tileset.AO_Sprites.resize(8);
+    // NORTH
+    tileset.AO_Sprites[4].setPrimitiveType(sf::PrimitiveType::Quads);
+    tileset.AO_Sprites[4].append(sf::Vertex(sf::Vector2f(origin.x,origin.y), shadowMaxColour));
+    tileset.AO_Sprites[4].append(sf::Vertex(sf::Vector2f(origin.x+size.x,origin.y), shadowMaxColour));
+    tileset.AO_Sprites[4].append(sf::Vertex(sf::Vector2f(origin.x+size.x,origin.y+dist.y), shadowMinColour));
+    tileset.AO_Sprites[4].append(sf::Vertex(sf::Vector2f(origin.x,origin.y+dist.y), shadowMinColour));
+
+    // NORTH EAST
+    tileset.AO_Sprites[3].setPrimitiveType(sf::PrimitiveType::Quads);
+    tileset.AO_Sprites[3].append(sf::Vertex(sf::Vector2f(origin.x+size.x,origin.y), shadowMaxColour));
+    tileset.AO_Sprites[3].append(sf::Vertex(sf::Vector2f(origin.x+size.x,origin.y+dist.y), shadowMinColour));
+    tileset.AO_Sprites[3].append(sf::Vertex(sf::Vector2f(origin.x+size.x-dist.x,origin.y+dist.y), shadowMinColour));
+    tileset.AO_Sprites[3].append(sf::Vertex(sf::Vector2f(origin.x+size.x-dist.x,origin.y), shadowMinColour));
+
+    // EAST
+    tileset.AO_Sprites[2].setPrimitiveType(sf::PrimitiveType::Quads);
+    tileset.AO_Sprites[2].append(sf::Vertex(sf::Vector2f(origin.x+size.x-dist.x, origin.y), shadowMinColour));
+    tileset.AO_Sprites[2].append(sf::Vertex(sf::Vector2f(origin.x+size.x, origin.y),        shadowMaxColour));
+    tileset.AO_Sprites[2].append(sf::Vertex(sf::Vector2f(origin.x+size.x, origin.y+size.y), shadowMaxColour));
+    tileset.AO_Sprites[2].append(sf::Vertex(sf::Vector2f(origin.x+size.x-dist.x, origin.y+size.y), shadowMinColour));
+
+    // SOUTH EAST
+    tileset.AO_Sprites[1].setPrimitiveType(sf::PrimitiveType::Quads);
+    tileset.AO_Sprites[1].append(sf::Vertex(sf::Vector2f(origin.x+size.x-dist.x, origin.y+size.y-dist.y), shadowMinColour));
+    tileset.AO_Sprites[1].append(sf::Vertex(sf::Vector2f(origin.x+size.x, origin.y+size.y-dist.y),        shadowMinColour));
+    tileset.AO_Sprites[1].append(sf::Vertex(sf::Vector2f(origin.x+size.x, origin.y+size.y),               shadowMaxColour));
+    tileset.AO_Sprites[1].append(sf::Vertex(sf::Vector2f(origin.x+size.x-dist.x, origin.y+size.y),        shadowMinColour));
+
+    // SOUTH
+    tileset.AO_Sprites[0].setPrimitiveType(sf::PrimitiveType::Quads);
+    tileset.AO_Sprites[0].append(sf::Vertex(sf::Vector2f(origin.x,origin.y+size.y-dist.y), shadowMinColour));
+    tileset.AO_Sprites[0].append(sf::Vertex(sf::Vector2f(origin.x+size.x,origin.y+size.y-dist.y), shadowMinColour));
+    tileset.AO_Sprites[0].append(sf::Vertex(sf::Vector2f(origin.x+size.x,origin.y+size.y), shadowMaxColour));
+    tileset.AO_Sprites[0].append(sf::Vertex(sf::Vector2f(origin.x,origin.y+size.y),        shadowMaxColour));
+
+    // SOUTH WEST
+    tileset.AO_Sprites[7].setPrimitiveType(sf::PrimitiveType::Quads);
+    tileset.AO_Sprites[7].append(sf::Vertex(sf::Vector2f(origin.x,origin.y+size.y), shadowMaxColour));
+    tileset.AO_Sprites[7].append(sf::Vertex(sf::Vector2f(origin.x,origin.y+size.y-dist.y), shadowMinColour));
+    tileset.AO_Sprites[7].append(sf::Vertex(sf::Vector2f(origin.x+dist.x,origin.y+size.y-dist.y), shadowMinColour));
+    tileset.AO_Sprites[7].append(sf::Vertex(sf::Vector2f(origin.x+dist.x,origin.y+size.y), shadowMinColour));
+
+    // WEST
+    tileset.AO_Sprites[6].setPrimitiveType(sf::PrimitiveType::Quads);
+    tileset.AO_Sprites[6].append(sf::Vertex(sf::Vector2f(origin.x,origin.y), shadowMaxColour));
+    tileset.AO_Sprites[6].append(sf::Vertex(sf::Vector2f(origin.x+dist.x,origin.y), shadowMinColour));
+    tileset.AO_Sprites[6].append(sf::Vertex(sf::Vector2f(origin.x+dist.x,origin.y+size.y), shadowMinColour));
+    tileset.AO_Sprites[6].append(sf::Vertex(sf::Vector2f(origin.x,origin.y+size.y), shadowMaxColour));
+
+    // NORTH WEST
+    tileset.AO_Sprites[5].setPrimitiveType(sf::PrimitiveType::Quads);
+    tileset.AO_Sprites[5].append(sf::Vertex(sf::Vector2f(origin.x,origin.y), shadowMaxColour));
+    tileset.AO_Sprites[5].append(sf::Vertex(sf::Vector2f(origin.x+dist.x,origin.y), shadowMinColour));
+    tileset.AO_Sprites[5].append(sf::Vertex(sf::Vector2f(origin.x+dist.x,origin.y+dist.y), shadowMinColour));
+    tileset.AO_Sprites[5].append(sf::Vertex(sf::Vector2f(origin.x,origin.y+dist.y), shadowMinColour));
 }
 
 int32 setTileFromGlobalPos(GameMap &map, sf::Vector2i position, byte tile_id)
@@ -1472,7 +1581,7 @@ int32 setTileFromGlobalPos(GameMap &map, sf::Vector2i position, byte tile_id)
             int32 _x = position.x-map.room[i].bounds.left;
             int32 _y = position.y-map.room[i].bounds.top;
 
-            map.room[i].tilemap[map.room[i].bounds.width * _y + _x] = tile_id;
+            map.room[i].tilemap[map.room[i].bounds.width * _y + _x].tileID = tile_id;
             return i;
         }
     }
@@ -1538,7 +1647,7 @@ void setRectTileArea(MapRoom &room, byte tile_id, sf::IntRect area)
         {
             uint32 _x = x + area.left;
             uint32 _y = y + area.top;
-            room.tilemap[_y * room.bounds.width + _x] = tile_id;
+            room.tilemap[_y * room.bounds.width + _x].tileID = tile_id;
         }
     }
 }
@@ -1573,7 +1682,7 @@ bool doesRectContainSolidTiles(GameMap &map, Tileset &tileset, uint32 room_id, s
                 }
             }
 
-            uint32 tileID = map.room[tile_room].getTile(pos.x, pos.y);
+            uint32 tileID = map.room[tile_room].getTile(pos.x, pos.y).tileID;
 
             if(tileID < tileset.tileCount && tileset.tile[tileID].isSolid)
             {

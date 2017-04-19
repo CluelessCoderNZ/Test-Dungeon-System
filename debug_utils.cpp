@@ -3,6 +3,7 @@
 #include "debug_utils.h"
 #include <iostream>
 
+
 using namespace std;
 
 string numToStr(real32 value, int32 sf)
@@ -22,6 +23,12 @@ string numToStr(int32 value)
     stringstream iss;
     iss << value;
     return iss.str();
+}
+
+string binaryToStr(byte value)
+{
+    bitset<8> b(value);
+    return b.to_string();
 }
 
 string variableToStr(sf::Vector2u value)

@@ -64,11 +64,22 @@ void RenderWholeMap(Entity_State_Controller &controller, GameState &state)
                 // In back render tiles
                 for(uint32 x = 0; x < roomRenderRegion.width; x++)
                 {
-                    byte tileID = state.current_map.room[room_index].getTile(x, y);
-                    if(state.tileset.tile[tileID].isVisible && state.tileset.tile[tileID].isFloor)
+                    MapTile tile = state.current_map.room[room_index].getTile(x, y);
+                    if(state.tileset.tile[tile.tileID].isVisible && state.tileset.tile[tile.tileID].isFloor)
                     {
-                        state.tileset.tile[tileID].sprite.setPosition(state.current_map.tileSize.x * (x+state.current_map.room[room_index].bounds.left), state.current_map.tileSize.y * (y+state.current_map.room[room_index].bounds.top));
-                        state.window.draw(state.tileset.tile[tileID].sprite);
+                        state.tileset.tile[tile.tileID].sprite.setPosition(state.current_map.tileSize.x * (x+state.current_map.room[room_index].bounds.left), state.current_map.tileSize.y * (y+state.current_map.room[room_index].bounds.top));
+                        state.window.draw(state.tileset.tile[tile.tileID].sprite);
+
+
+                        for(uint32 i = 0; i < 8; i++)
+                        {
+                            if(tile.AO & (1 << i))
+                            {
+                                state.tileset.AO_RenderState.transform = sf::Transform();
+                                state.tileset.AO_RenderState.transform.translate(state.current_map.tileSize.x * (x+state.current_map.room[room_index].bounds.left), state.current_map.tileSize.y * (y+state.current_map.room[room_index].bounds.top));
+                                state.window.draw(state.tileset.AO_Sprites[i], state.tileset.AO_RenderState);
+                            }
+                        }
                     }
                 }
 
@@ -84,11 +95,11 @@ void RenderWholeMap(Entity_State_Controller &controller, GameState &state)
                 // In front render tiles
                 for(uint32 x = 0; x < roomRenderRegion.width; x++)
                 {
-                    byte tileID = state.current_map.room[room_index].getTile(x, y);
-                    if(state.tileset.tile[tileID].isVisible && !state.tileset.tile[tileID].isFloor)
+                    MapTile tile = state.current_map.room[room_index].getTile(x, y);
+                    if(state.tileset.tile[tile.tileID].isVisible && !state.tileset.tile[tile.tileID].isFloor)
                     {
-                        state.tileset.tile[tileID].sprite.setPosition(state.current_map.tileSize.x * (x+state.current_map.room[room_index].bounds.left), state.current_map.tileSize.y * (y+state.current_map.room[room_index].bounds.top));
-                        state.window.draw(state.tileset.tile[tileID].sprite);
+                        state.tileset.tile[tile.tileID].sprite.setPosition(state.current_map.tileSize.x * (x+state.current_map.room[room_index].bounds.left), state.current_map.tileSize.y * (y+state.current_map.room[room_index].bounds.top));
+                        state.window.draw(state.tileset.tile[tile.tileID].sprite);
                     }
                 }
             }
@@ -398,19 +409,40 @@ void updateDebugState(GameState &state, InputState input)
             }
         }
     }
-    
-    MapFlowGraph::renderGraphNode(state.window, &state.current_map.graphFlow, sf::Vector2f(18,18));
 
+    state.debug.additionalInfo = "";
 
     if(state.debug.display_FPS)
     {
-        sf::Text fps_Counter;
-        fps_Counter.setFont(state.debug.font);
-        fps_Counter.setFillColor(state.debug.colour_fps);
-        fps_Counter.setCharacterSize(16);
-        fps_Counter.setString(numToStr(state.debug.lastRecordedFrameRate, 1));
-        state.window.draw(fps_Counter);
+        state.debug.additionalInfo = state.debug.additionalInfo+"FPS: "+numToStr(state.debug.lastRecordedFrameRate, 1)+"\n";
     }
+    if(state.debug.display_TileID)
+    {
+        byte tileID = 0;
+        if(state.debug.mouse_hovered_room_id != -1)
+        {
+            sf::Vector2i localTilePos = sf::Vector2i(input.mouse_globalPos.x/state.current_map.tileSize.x, input.mouse_globalPos.y/state.current_map.tileSize.y)-sf::Vector2i(state.current_map.room[(state.debug.mouse_hovered_room_id)].bounds.left, state.current_map.room[(state.debug.mouse_hovered_room_id)].bounds.top);
+            tileID = state.current_map.room[state.debug.mouse_hovered_room_id].getTile(localTilePos.x, localTilePos.y).tileID;
+        }
+        state.debug.additionalInfo = state.debug.additionalInfo+"TileID: "+numToStr((int32)tileID)+"\n";
+    }
+    if(state.debug.display_TileAO)
+    {
+        byte tileAO = 0;
+        if(state.debug.mouse_hovered_room_id != -1)
+        {
+            sf::Vector2i localTilePos = sf::Vector2i(input.mouse_globalPos.x/state.current_map.tileSize.x, input.mouse_globalPos.y/state.current_map.tileSize.y)-sf::Vector2i(state.current_map.room[(state.debug.mouse_hovered_room_id)].bounds.left, state.current_map.room[(state.debug.mouse_hovered_room_id)].bounds.top);
+            tileAO = state.current_map.room[state.debug.mouse_hovered_room_id].getTile(localTilePos.x, localTilePos.y).AO;
+        }
+        state.debug.additionalInfo = state.debug.additionalInfo+"TileAO: "+binaryToStr((int32)tileAO)+"\n";
+    }
+
+    sf::Text additionalText;
+    additionalText.setFont(state.debug.font);
+    additionalText.setFillColor(state.debug.colour_AdditionalInfo);
+    additionalText.setCharacterSize(16);
+    additionalText.setString(state.debug.additionalInfo);
+    state.window.draw(additionalText);
 }
 
 #endif /* end of include guard: GAME_PLATFORM_CPP */

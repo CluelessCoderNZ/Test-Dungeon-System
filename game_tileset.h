@@ -19,9 +19,11 @@ struct Tile_Template
 
 struct Tileset
 {
-    vector<Tile_Template> tile;
-    uint32                tileCount = 0;
-    sf::Vector2u          tileSize  = sf::Vector2u(32,32);
+    vector<Tile_Template>   tile;
+    vector<sf::VertexArray> AO_Sprites;
+    sf::RenderStates        AO_RenderState;
+    uint32                  tileCount = 0;
+    sf::Vector2u            tileSize  = sf::Vector2u(32,32);
 };
 
 Tileset loadTilesetFromFile(string filename, sf::Vector2u tileSize);

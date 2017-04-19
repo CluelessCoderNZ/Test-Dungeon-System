@@ -54,6 +54,8 @@ int main(int argc, char* argv[])
     gamestate.tileset.tile[2].isSolid               = true;
     gamestate.tileset.tile[2].isFloor               = false;
 
+    generateMapAO(gamestate.current_map, gamestate.tileset);
+    generateTilesetAOSprites(gamestate.tileset, gamestate.current_map.tileSize, 7, sf::Color(0,0,0,75), sf::Color(0,0,0,0));
     initDebugState(gamestate.debug);
     gamestate.debug.memoryAnalyzer.controller = &gamestate.entity_controller;
 
