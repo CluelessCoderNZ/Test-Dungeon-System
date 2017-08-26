@@ -186,8 +186,11 @@ void Entity_System_CircleRender(Entity_State_Controller &controller, sf::RenderT
 void Entity_System_CollisionTilemap(Entity_State_Controller &controller, real32 t, GameMap &map, Tileset &tileset, Entity_Reference &entity);
 void Entity_System_BasicTestAI(Entity_State_Controller &controller, real32 t, Entity_Reference &entity);
 
+// Factory Functions
 Entity_Reference createPlayerEntity(GameMap &map, Entity_State_Controller &controller, Entity_Component_Position position);
 Entity_Reference createDumbAIEntity(GameMap &map, Entity_State_Controller &controller, Entity_Component_Position position);
+
+// Misc Functions
 void moveEntityToRoom(GameMap &map, MapRoomConnection connection, Entity_State_Controller &controller, Entity_Reference entity);
 void insertion_sortUpdateOrder(vector<Entity_Reference> &list);
 

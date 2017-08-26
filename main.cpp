@@ -16,8 +16,8 @@ int main(int argc, char* argv[])
 
     GameState gamestate;
     gamestate.window.create(sf::VideoMode(1024,768), "Entity Test System");
-    gamestate.window.setFramerateLimit(60);
-    gamestate.window.setVerticalSyncEnabled(true);
+    //gamestate.window.setFramerateLimit(60);
+    //gamestate.window.setVerticalSyncEnabled(true);
 
     gamestate.entity_controller.entity_storage.addChunk();
 
@@ -60,8 +60,11 @@ int main(int argc, char* argv[])
     gamestate.debug.memoryAnalyzer.controller = &gamestate.entity_controller;
 
     sf::Clock framerateTimer;
+    sf::Time  frameTime;
+    real32    frameSpeed=0.5;
     while(gamestate.window.isOpen())
     {
+        TIMED_BLOCK(1);
         input = pollForKeyboardInput(input, keybind);
         input.mouse_screenPos = sf::Mouse::getPosition(gamestate.window);
 
@@ -87,7 +90,7 @@ int main(int argc, char* argv[])
 
 
         gamestate.window.clear();
-        GAME_UPDATE_AND_RENDER(gamestate, input, 1);
+        GAME_UPDATE_AND_RENDER(gamestate, input, frameSpeed);
         gamestate.window.display();
 
         #ifdef DEBUG_TOGGLE
@@ -103,11 +106,14 @@ int main(int argc, char* argv[])
             }
         #endif
 
-
-        gamestate.debug.lastRecordedFrameRate = 1000000.0 / framerateTimer.restart().asMicroseconds();
-
+        frameTime = framerateTimer.restart();
+        frameSpeed = frameTime.asMicroseconds()/16666.0;
+        gamestate.debug.lastRecordedFrameRate = 1000000.0 / frameTime.asMicroseconds();
     }
 
     CleanUpGameState(gamestate);
     return 0;
 }
+
+debug_profile_record DebugProfileRecordArray[__COUNTER__];
+uint32 kTotalRecordCount=__COUNTER__-1;

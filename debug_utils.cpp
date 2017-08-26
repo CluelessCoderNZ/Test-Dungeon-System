@@ -25,6 +25,27 @@ string numToStr(int32 value)
     return iss.str();
 }
 
+string numToStr(int64 value)
+{
+    stringstream iss;
+    iss << value;
+    return iss.str();
+}
+
+string numToStr(uint32 value)
+{
+    stringstream iss;
+    iss << value;
+    return iss.str();
+}
+
+string numToStr(uint64 value)
+{
+    stringstream iss;
+    iss << value;
+    return iss.str();
+}
+
 string binaryToStr(byte value)
 {
     bitset<8> b(value);
@@ -76,6 +97,16 @@ string variableToStr(int32 value)
     return numToStr(value);
 }
 
+string variableToStr(int64 value)
+{
+    return numToStr(value);
+}
+
+string variableToStr(uint64 value)
+{
+    return numToStr(value);
+}
+
 string variableToStr(bool value)
 {
     return value ? "True" : "False";
@@ -102,6 +133,8 @@ void initDebugState(DebugStateInformation &debug)
         debug.ui.rootNode.children[1]->children.push_back(new DebugMenuNode("OpenEntityCache", &debug.memoryAnalyzer.isEnabled));
 
     debug.ui.rootNode.children.push_back(new DebugMenuNode("System"));
+        debug.ui.rootNode.children[2]->children.push_back(new DebugMenuNode("Profiler"));
+            debug.ui.rootNode.children[2]->children[0]->children.push_back(new DebugMenuNode(DEBUG_UI_NODE_PROFILER));
         debug.ui.rootNode.children[2]->children.push_back(new DebugMenuNode("Display_FPS", &debug.display_FPS));
 
 }
@@ -419,6 +452,15 @@ void DebugMenuNode::draw(sf::RenderWindow &window, InputState &input, sf::Text &
                 textStr = "V "+textStr;
             }else{
                 textStr = "> "+textStr;
+            }
+        }break;
+
+        case DEBUG_UI_NODE_PROFILER:
+        {
+            for(uint32 i=0; i < kTotalRecordCount; i++)
+            {
+                if(i > 0) textStr+="\n";
+                textStr+=DebugProfileRecordArray[i].functionName+"(): "+variableToStr(DebugProfileRecordArray[i].clockCount)+"cy";
             }
         }break;
     }

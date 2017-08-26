@@ -36,7 +36,7 @@ void RenderEntity(Entity_State_Controller &controller, GameState &state, Entity_
 
 void RenderWholeMap(Entity_State_Controller &controller, GameState &state)
 {
-
+    TIMED_BLOCK(1);
 
     // Todo apply X restictions
     sf::IntRect pixelViewRegion = sf::IntRect(state.gameview.getCenter().x - state.gameview.getSize().x/2, state.gameview.getCenter().y - state.gameview.getSize().y/2, state.gameview.getSize().x, state.gameview.getSize().y);
@@ -64,6 +64,7 @@ void RenderWholeMap(Entity_State_Controller &controller, GameState &state)
                 // In back render tiles
                 for(uint32 x = 0; x < roomRenderRegion.width; x++)
                 {
+                    TIMED_BLOCK(1);
                     MapTile tile = state.current_map.room[room_index].getTile(x, y);
                     if(state.tileset.tile[tile.tileID].isVisible && state.tileset.tile[tile.tileID].isFloor)
                     {
@@ -109,7 +110,7 @@ void RenderWholeMap(Entity_State_Controller &controller, GameState &state)
 
 void GAME_UPDATE_AND_RENDER(GameState &state, InputState input, real32 t)
 {
-    uint32 entityUpdateT = t;
+    real32 entityUpdateT = t;
     if(state.pausedGameplay)
     {
         entityUpdateT=0;
@@ -140,8 +141,9 @@ void GAME_UPDATE_AND_RENDER(GameState &state, InputState input, real32 t)
     // Simulate connected rooms to sim room
     for(uint32 connect_index = 0; connect_index < state.current_map.room[state.activeSimRoom].connection.size(); connect_index++)
     {
-        uint32 connectID = state.current_map.room[state.activeSimRoom].connection[connect_index].secondaryRoom.id;
 
+        uint32 connectID = state.current_map.room[state.activeSimRoom].connection[connect_index].secondaryRoom.id;
+        TIMED_BLOCK(state.current_map.room[connectID].entity_list.size());
         for(uint32 i = 0; i < state.current_map.room[connectID].entity_list.size(); i++)
         {
             UpdateEntity(state.entity_controller, state, input, state.current_map.room[connectID].entity_list[i], entityUpdateT);

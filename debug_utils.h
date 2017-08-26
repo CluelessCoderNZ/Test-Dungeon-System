@@ -8,8 +8,56 @@
 #include "entity.h"
 #include "game_platform.h"
 #include "tool_functions.h"
+#include <time.h>
 
 using namespace std;
+
+#define TOKENPASTE_(x, y) x ## y
+#define TOKENPASTE(x, y) TOKENPASTE_(x, y)
+
+#define TIMED_BLOCK(x) timed_block TOKENPASTE(TimedBlock_, __LINE__)(__COUNTER__, __FILE__, __LINE__, __FUNCTION__, x);
+
+static inline uint64 rdtsc()
+{
+    uint64 lo,hi;
+    __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
+    return ((uint64)hi << 32) | lo;
+}
+
+struct debug_profile_record
+{
+    uint64 startClock=0;
+    uint64 clockCount = 0;
+    uint32 hitCount = 0;
+
+    string fileName;
+    string functionName;
+    uint32 lineNumber;
+};
+
+extern debug_profile_record DebugProfileRecordArray[];
+extern uint32 kTotalRecordCount;
+
+struct timed_block
+{
+    debug_profile_record *Record;
+
+    timed_block(uint32 counter, string filename, uint32 linenumber, string functionname, uint32 hitcount = 1)
+    {
+        Record = DebugProfileRecordArray + counter;
+        Record->fileName = filename;
+        Record->lineNumber = linenumber;
+        Record->functionName = functionname;
+        Record->startClock = rdtsc();
+        Record->hitCount += hitcount;
+    }
+
+    ~timed_block()
+    {
+        Record->clockCount += rdtsc()-Record->startClock;
+    }
+};
+
 
 struct GameState;
 struct Entity_State_Controller;
@@ -50,7 +98,8 @@ enum DebugMenuNodeType
 {
     DEBUG_UI_NODE_END,
     DEBUG_UI_NODE_SUBMENU,
-    DEBUG_UI_NODE_ITEM_BOOL
+    DEBUG_UI_NODE_ITEM_BOOL,
+    DEBUG_UI_NODE_PROFILER
 };
 
 struct DebugMenuNode
@@ -91,6 +140,11 @@ struct DebugMenuNode
         display_name = name;
         type         = DEBUG_UI_NODE_ITEM_BOOL;
         bool_pointer = data;
+    }
+
+    DebugMenuNode(DebugMenuNodeType type_)
+    {
+        type = type_;
     }
 };
 
