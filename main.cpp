@@ -16,8 +16,8 @@ int main(int argc, char* argv[])
 
     GameState gamestate;
     gamestate.window.create(sf::VideoMode(1024,768), "Entity Test System");
-    gamestate.window.setFramerateLimit(60);
-    gamestate.window.setVerticalSyncEnabled(true);
+    //gamestate.window.setFramerateLimit(60);
+    //gamestate.window.setVerticalSyncEnabled(true);
 
     gamestate.entity_controller.entity_storage.addChunk();
 
@@ -106,12 +106,16 @@ int main(int argc, char* argv[])
                     }
                 }
             #endif
-
-            frameTime = framerateTimer.restart();
-            frameSpeed = frameTime.asMicroseconds()/16666.0;
-            gamestate.debug.lastRecordedFrameRate = 1000000.0 / frameTime.asMicroseconds();
         }
         collateDebugEventFrameData(gamestate.debug);
+        
+        if(framerateTimer.getElapsedTime().asMicroseconds() < 16666)
+        {
+            sf::sleep(sf::microseconds(16666)-framerateTimer.getElapsedTime());
+        }
+        frameTime = framerateTimer.restart();
+        frameSpeed = frameTime.asMicroseconds()/16666.0;
+        gamestate.debug.lastRecordedFrameRate = 1000000.0 / frameTime.asMicroseconds();
     }
 
     CleanUpGameState(gamestate);
