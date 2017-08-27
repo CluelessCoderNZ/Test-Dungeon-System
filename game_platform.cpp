@@ -110,6 +110,7 @@ void RenderWholeMap(Entity_State_Controller &controller, GameState &state)
 
 void GAME_UPDATE_AND_RENDER(GameState &state, InputState input, real32 t)
 {
+    TIMED_BLOCK(1);
     real32 entityUpdateT = t;
     if(state.pausedGameplay)
     {
@@ -250,6 +251,7 @@ void CleanUpGameState(GameState &state)
 
 void updateDebugState(GameState &state, InputState input)
 {
+    TIMED_BLOCK(1);
     // ------
     // UPDATE
     // ------
@@ -440,7 +442,7 @@ void updateDebugState(GameState &state, InputState input)
     }
 
     sf::Text additionalText;
-    additionalText.setPosition(state.debug.ui.draw(state.window, input, state.debug.font));
+    additionalText.setPosition(state.debug.ui.draw(state.window, input, state.debug, state.debug.font));
     additionalText.setFont(state.debug.font);
     additionalText.setFillColor(state.debug.colour_AdditionalInfo);
     additionalText.setCharacterSize(16);

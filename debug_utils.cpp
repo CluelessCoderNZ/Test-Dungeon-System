@@ -434,87 +434,141 @@ void updateDebugMemoryAnalyzer(DebugStateInformation &debug, GameMap &map, Input
     }
 }
 
-void DebugMenuNode::draw(sf::RenderWindow &window, InputState &input, sf::Text &text, uint32 margin, uint32 indent)
+void collateDebugEventFrameData(DebugStateInformation &debug)
 {
-    // String Setup
-    string textStr = display_name;
-    switch(type)
+    memcpy(debug.debugRecordSnapshotArray+debug.debugRecordSnapshotIndex*kTotalRecordCount, &DebugProfileRecordArray, kTotalRecordCount*sizeof(debug_profile_record));
+    debug.debugRecordSnapshotIndex++;
+
+    for(uint32 i=0; i < kTotalRecordCount; i++)
     {
-        case DEBUG_UI_NODE_ITEM_BOOL:
-        {
-            textStr = textStr+": "+variableToStr(*bool_pointer);
-        }break;
-
-        case DEBUG_UI_NODE_SUBMENU:
-        {
-            if (isSubMenuOpen)
-            {
-                textStr = "V "+textStr;
-            }else{
-                textStr = "> "+textStr;
-            }
-        }break;
-
-        case DEBUG_UI_NODE_PROFILER:
-        {
-            for(uint32 i=0; i < kTotalRecordCount; i++)
-            {
-                if(i > 0) textStr+="\n";
-                textStr+=DebugProfileRecordArray[i].functionName+"(): "+variableToStr(DebugProfileRecordArray[i].clockCount)+"cy";
-            }
-        }break;
+        DebugProfileRecordArray[i].clockCount=0;
+        DebugProfileRecordArray[i].hitCount=0;
     }
+
+    if(debug.debugRecordSnapshotIndex==debug.kDebugRecordSnapshotSize)
+        debug.debugRecordSnapshotIndex=0;
+}
+
+void draw_DebugMenuNodeSubMenu(sf::RenderWindow &window, InputState &input, DebugMenuNode &node, sf::Text &text, sf::Vector2f &position)
+{
+    string textStr = node.display_name;
+    if (node.isSubMenuOpen)
+    {
+        textStr = "V "+textStr;
+    }else{
+        textStr = "> "+textStr;
+    }
+
+    text.setPosition(position);
     text.setString(textStr);
-    text.setOutlineColor(textOutlineColour);
+    text.setOutlineColor(node.textOutlineColour);
 
     // Mouse Input
     if(text.getGlobalBounds().contains(input.mouse_screenPos.x, input.mouse_screenPos.y))
     {
         if(input.action(MOUSE_LEFTCLICK).state == BUTTON_PRESSED)
         {
-            switch(type)
-            {
-                case DEBUG_UI_NODE_SUBMENU:
-                {
-                    isSubMenuOpen = !isSubMenuOpen;
-                }break;
-                case DEBUG_UI_NODE_ITEM_BOOL:
-                {
-                    *bool_pointer = !(*bool_pointer);
-                }break;
-            }
+            node.isSubMenuOpen = !node.isSubMenuOpen;
         }else{
-            text.setFillColor(textHighlightColour);
+            text.setFillColor(node.textHighlightColour);
         }
     }else{
-        text.setFillColor(textColour);
+        text.setFillColor(node.textColour);
     }
+
     window.draw(text);
 
+    position.y+=node.margin + text.getGlobalBounds().height;
+}
+
+void draw_DebugMenuNodeItemBool(sf::RenderWindow &window, InputState &input, DebugMenuNode &node, sf::Text &text, sf::Vector2f &position)
+{
+    string textStr = node.display_name;
+    textStr = textStr+": "+variableToStr(*node.bool_pointer);
+
+    text.setPosition(position);
+    text.setString(textStr);
+    text.setOutlineColor(node.textOutlineColour);
+    // Mouse Input
+    if(text.getGlobalBounds().contains(input.mouse_screenPos.x, input.mouse_screenPos.y))
+    {
+        if(input.action(MOUSE_LEFTCLICK).state == BUTTON_PRESSED)
+        {
+            *node.bool_pointer = !(*node.bool_pointer);
+        }else{
+            text.setFillColor(node.textHighlightColour);
+        }
+    }else{
+        text.setFillColor(node.textColour);
+    }
+
+    window.draw(text);
+
+    position.y+=node.margin + text.getGlobalBounds().height;
+}
+
+void draw_DebugMenuNodeProfiler(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, DebugMenuNode &node, sf::Text &text, sf::Vector2f &position)
+{
+    string textStr;
+    for(uint32 i=0; i < kTotalRecordCount; i++)
+    {
+        debug_profile_record *record = debug.debugRecordSnapshotArray+i+(debug.debugRecordSnapshotIndex*kTotalRecordCount);
+        if(i > 0) textStr+="\n";
+        textStr+=record->functionName+"(): "+variableToStr(record->clockCount)+"cy";
+    }
+
+    text.setPosition(position);
+    text.setString(textStr);
+    text.setOutlineColor(node.textOutlineColour);
+    window.draw(text);
+
+    position.y+=node.margin + text.getGlobalBounds().height;
+}
+
+void DebugMenuNode::draw(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, sf::Text &text, sf::Vector2f &position, uint32 indent)
+{
+    // Render Node
+    switch(type)
+    {
+        case DEBUG_UI_NODE_SUBMENU:
+        {
+            draw_DebugMenuNodeSubMenu(window, input, *this, text, position);
+        }break;
+        case DEBUG_UI_NODE_ITEM_BOOL:
+        {
+            draw_DebugMenuNodeItemBool(window, input, *this, text, position);
+        }break;
+        case DEBUG_UI_NODE_PROFILER:
+        {
+            draw_DebugMenuNodeProfiler(window, input, debug, *this, text, position);
+        }break;
+    }
+
     // Render Children
-    text.setPosition(text.getPosition().x + indent, text.getPosition().y + margin+text.getGlobalBounds().height);
+    position.x+=indent;
     if(type == DEBUG_UI_NODE_SUBMENU and isSubMenuOpen == true)
     {
         for(uint32 i = 0; i < children.size(); i++)
         {
-            children[i]->draw(window, input, text, margin, indent);
+            children[i]->draw(window, input, debug, text, position, indent);
             string test = text.getString();
         }
     }
-    text.setPosition(text.getPosition().x - indent, text.getPosition().y);
+    position.x-=indent;
 }
 
-sf::Vector2f DebugMenuUIState::draw(sf::RenderWindow &window, InputState &input, sf::Font &font)
+sf::Vector2f DebugMenuUIState::draw(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, sf::Font &font)
 {
     sf::Text text;
     text.setFont(font);
     text.setCharacterSize(textSize);
     text.setPosition(position.x, position.y);
     text.setOutlineThickness(2);
+    sf::Vector2f position(0,0);
 
-    rootNode.draw(window, input, text, margin, indent);
+    rootNode.draw(window, input, debug, text, position, indent);
 
-    return text.getPosition();
+    return position;
 }
 
 

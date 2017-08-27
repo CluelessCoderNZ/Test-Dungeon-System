@@ -16,8 +16,8 @@ int main(int argc, char* argv[])
 
     GameState gamestate;
     gamestate.window.create(sf::VideoMode(1024,768), "Entity Test System");
-    //gamestate.window.setFramerateLimit(60);
-    //gamestate.window.setVerticalSyncEnabled(true);
+    gamestate.window.setFramerateLimit(60);
+    gamestate.window.setVerticalSyncEnabled(true);
 
     gamestate.entity_controller.entity_storage.addChunk();
 
@@ -64,51 +64,54 @@ int main(int argc, char* argv[])
     real32    frameSpeed=0.5;
     while(gamestate.window.isOpen())
     {
-        TIMED_BLOCK(1);
-        input = pollForKeyboardInput(input, keybind);
-        input.mouse_screenPos = sf::Mouse::getPosition(gamestate.window);
-
-        sf::Event event;
-        while(gamestate.window.pollEvent(event))
         {
-            switch(event.type)
+            TIMED_BLOCK(1);
+            input = pollForKeyboardInput(input, keybind);
+            input.mouse_screenPos = sf::Mouse::getPosition(gamestate.window);
+
+            sf::Event event;
+            while(gamestate.window.pollEvent(event))
             {
-                case sf::Event::Closed:
+                switch(event.type)
                 {
-                    gamestate.window.close();
-                }break;
+                    case sf::Event::Closed:
+                    {
+                        gamestate.window.close();
+                    }break;
 
-                case sf::Event::MouseWheelScrolled :
-                {
-                    input.mouseWheel.delta = event.mouseWheelScroll.delta;
-                }break;
+                    case sf::Event::MouseWheelScrolled :
+                    {
+                        input.mouseWheel.delta = event.mouseWheelScroll.delta;
+                    }break;
 
-                default:
-                    break;
-            }
-        }
-
-
-        gamestate.window.clear();
-        GAME_UPDATE_AND_RENDER(gamestate, input, frameSpeed);
-        gamestate.window.display();
-
-        #ifdef DEBUG_TOGGLE
-            if(input.action(INPUT_DEBUG_TOGGLE).state == BUTTON_PRESSED)
-            {
-                gamestate.debug.isEnabled = !gamestate.debug.isEnabled;
-
-                // Close debug windows
-                if(!gamestate.debug.isEnabled)
-                {
-                    gamestate.debug.memoryAnalyzer.window.close();
+                    default:
+                        break;
                 }
             }
-        #endif
 
-        frameTime = framerateTimer.restart();
-        frameSpeed = frameTime.asMicroseconds()/16666.0;
-        gamestate.debug.lastRecordedFrameRate = 1000000.0 / frameTime.asMicroseconds();
+
+            gamestate.window.clear();
+            GAME_UPDATE_AND_RENDER(gamestate, input, frameSpeed);
+            gamestate.window.display();
+
+            #ifdef DEBUG_TOGGLE
+                if(input.action(INPUT_DEBUG_TOGGLE).state == BUTTON_PRESSED)
+                {
+                    gamestate.debug.isEnabled = !gamestate.debug.isEnabled;
+
+                    // Close debug windows
+                    if(!gamestate.debug.isEnabled)
+                    {
+                        gamestate.debug.memoryAnalyzer.window.close();
+                    }
+                }
+            #endif
+
+            frameTime = framerateTimer.restart();
+            frameSpeed = frameTime.asMicroseconds()/16666.0;
+            gamestate.debug.lastRecordedFrameRate = 1000000.0 / frameTime.asMicroseconds();
+        }
+        collateDebugEventFrameData(gamestate.debug);
     }
 
     CleanUpGameState(gamestate);
@@ -116,4 +119,4 @@ int main(int argc, char* argv[])
 }
 
 debug_profile_record DebugProfileRecordArray[__COUNTER__];
-uint32 kTotalRecordCount=__COUNTER__-1;
+const uint32 kTotalRecordCount=__COUNTER__-1;

@@ -26,7 +26,6 @@ static inline uint64 rdtsc()
 
 struct debug_profile_record
 {
-    uint64 startClock=0;
     uint64 clockCount = 0;
     uint32 hitCount = 0;
 
@@ -36,10 +35,11 @@ struct debug_profile_record
 };
 
 extern debug_profile_record DebugProfileRecordArray[];
-extern uint32 kTotalRecordCount;
+extern const uint32 kTotalRecordCount;
 
 struct timed_block
 {
+    uint64 startClock=0;
     debug_profile_record *Record;
 
     timed_block(uint32 counter, string filename, uint32 linenumber, string functionname, uint32 hitcount = 1)
@@ -48,13 +48,13 @@ struct timed_block
         Record->fileName = filename;
         Record->lineNumber = linenumber;
         Record->functionName = functionname;
-        Record->startClock = rdtsc();
+        startClock = rdtsc();
         Record->hitCount += hitcount;
     }
 
     ~timed_block()
     {
-        Record->clockCount += rdtsc()-Record->startClock;
+        Record->clockCount += rdtsc()-startClock;
     }
 };
 
@@ -62,6 +62,7 @@ struct timed_block
 struct GameState;
 struct Entity_State_Controller;
 struct Entity_Reference;
+struct DebugStateInformation;
 
 #define DEBUG_MAX_COLOURPALATTE 7
 const sf::Color kDebug_ColourPalatte[] =
@@ -110,6 +111,7 @@ struct DebugMenuNode
     sf::Color           textColour            = sf::Color::White;
     sf::Color           textHighlightColour   = sf::Color(255, 255, 125);
     sf::Color           textOutlineColour     = sf::Color::Black;
+    uint32              margin = 0;
 
     union
     {
@@ -119,7 +121,7 @@ struct DebugMenuNode
 
     vector<DebugMenuNode*> children;
 
-    void draw(sf::RenderWindow &window, InputState &input, sf::Text &text, uint32 margin, uint32 indent);
+    void draw(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, sf::Text &text, sf::Vector2f &position, uint32 indent);
     DebugMenuNode(){}
     ~DebugMenuNode()
     {
@@ -152,11 +154,10 @@ struct DebugMenuUIState
 {
     DebugMenuNode rootNode = DebugMenuNode("Debug Menu");
     sf::Vector2f  position = sf::Vector2f(0,0);
-    uint32  margin=0;
     uint32  indent=25;
     uint32  textSize = 20;
 
-    sf::Vector2f draw(sf::RenderWindow &window, InputState &input, sf::Font &font);
+    sf::Vector2f draw(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, sf::Font &font);
 };
 
 struct DebugStateInformation
@@ -187,7 +188,12 @@ struct DebugStateInformation
     bool    display_TileID=false;
     bool    display_TileAO=false;
 
+    // Debug Data
+    uint32 kDebugRecordSnapshotSize = 120;
+    uint32 debugRecordSnapshotIndex=0;
+    debug_profile_record* debugRecordSnapshotArray;
 
+    // UI Settings
     sf::Color colour_AdditionalInfo             = sf::Color::Yellow;
     sf::Color colour_roomBoundaries             = sf::Color::Green;
     sf::Color colour_roomGraph                  = sf::Color::Cyan;
@@ -199,6 +205,16 @@ struct DebugStateInformation
 
     real32   lastRecordedFrameRate=60;
     int32    mouse_hovered_room_id = -1;
+
+    DebugStateInformation()
+    {
+        debugRecordSnapshotArray = (debug_profile_record*)malloc(kDebugRecordSnapshotSize*kTotalRecordCount*sizeof(debug_profile_record));
+    }
+
+    ~DebugStateInformation()
+    {
+        free(debugRecordSnapshotArray);
+    }
 };
 
 string numToStr(real32 value, int32 sf = -1);
@@ -218,6 +234,6 @@ string variableToStr(bool          value);
 
 void initDebugState(DebugStateInformation &debug);
 void updateDebugMemoryAnalyzer(DebugStateInformation &debug, GameMap &map, InputState &input);
-
+void collateDebugEventFrameData(DebugStateInformation &debug);
 
 #endif /* end of include guard: DEBUG_UTILS_H */
