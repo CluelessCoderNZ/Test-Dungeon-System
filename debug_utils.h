@@ -16,6 +16,8 @@ using namespace std;
 #define TOKENPASTE(x, y) TOKENPASTE_(x, y)
 
 #define TIMED_BLOCK(x) timed_block TOKENPASTE(TimedBlock_, __LINE__)(__COUNTER__, __FILE__, __LINE__, __FUNCTION__, x);
+#define NAMED_BLOCK(y, x) timed_block TOKENPASTE(TimedBlock_, __LINE__)(__COUNTER__, __FILE__, __LINE__, y, x);
+
 
 static inline uint64 rdtsc()
 {
@@ -24,11 +26,22 @@ static inline uint64 rdtsc()
     return ((uint64)hi << 32) | lo;
 }
 
+enum debug_event_type
+{
+    DEBUG_EVENT_TIMED_BLOCK_START,
+    DEBUG_EVENT_TIMED_BLOCK_END
+};
+
+struct debug_event
+{
+    uint64 clock;
+    uint32 hitCount;
+    uint16 type;
+    uint16 record_id;
+};
+
 struct debug_profile_record
 {
-    uint64 clockCount = 0;
-    uint32 hitCount = 0;
-
     string fileName;
     string functionName;
     uint32 lineNumber;
@@ -37,25 +50,66 @@ struct debug_profile_record
 extern debug_profile_record DebugProfileRecordArray[];
 extern const uint32 kTotalRecordCount;
 
+const uint32 kMaxEventCount = (16 * 65536);
+debug_event DebugEventList[kMaxEventCount];
+uint32 DebugEvent_Index = 0;
+
 struct timed_block
 {
-    uint64 startClock=0;
-    debug_profile_record *Record;
-
+    uint32 record_id=0;
     timed_block(uint32 counter, string filename, uint32 linenumber, string functionname, uint32 hitcount = 1)
     {
+        debug_profile_record* Record;
         Record = DebugProfileRecordArray + counter;
         Record->fileName = filename;
         Record->lineNumber = linenumber;
         Record->functionName = functionname;
-        startClock = rdtsc();
-        Record->hitCount += hitcount;
+
+        assert(DebugEvent_Index < kMaxEventCount);
+        debug_event *event = &DebugEventList[DebugEvent_Index];
+        event->clock = rdtsc();
+        event->record_id = counter;
+        event->hitCount = hitcount;
+        event->type = (uint16)DEBUG_EVENT_TIMED_BLOCK_START;
+        DebugEvent_Index++;
+
+        record_id=counter;
     }
 
     ~timed_block()
     {
-        Record->clockCount += rdtsc()-startClock;
+        assert(DebugEvent_Index < kMaxEventCount);
+        debug_event *event = &DebugEventList[DebugEvent_Index];
+        event->clock = rdtsc();
+        event->record_id = record_id;
+        event->type = (uint16)DEBUG_EVENT_TIMED_BLOCK_END;
+        DebugEvent_Index++;
     }
+};
+
+struct frame_event_block
+{
+    uint16 record_id = 0;
+    uint64 startClock = 0;
+    uint64 clock_time = 0;
+    uint32 hitCount = 0;
+
+    vector<frame_event_block*> children;
+    frame_event_block* parent = nullptr;
+
+    ~frame_event_block()
+    {
+        for(uint32 i = 0; i < children.size(); i++)
+        {
+            delete children[i];
+        }
+    }
+};
+
+struct frame_event_summary
+{
+    frame_event_block main_event;
+    uint32 max_depth=1;
 };
 
 
@@ -103,6 +157,42 @@ enum DebugMenuNodeType
     DEBUG_UI_NODE_PROFILER
 };
 
+struct DebugProfilerUiData
+{
+    sf::Vector2f min_viewport_size = sf::Vector2f(500, 100);
+    sf::Vector2f viewport_size = sf::Vector2f(800,100);
+    sf::Vector2f viewportMargin = sf::Vector2f(0,10);
+    uint32       framebar_height = 30;
+    uint32       framebar_slotOutlineWidth=1;
+    sf::Color    frameCurrentColour = sf::Color(48,197,255);
+    sf::Color    frameViewingColour = sf::Color(0,0,0,0);
+    sf::Color    frameViewingOutlineColour = sf::Color::White;
+    sf::Color    frameOutlineColour = sf::Color::Black;
+    sf::Color    frameBlankColour   = sf::Color(100,100,100);
+    sf::Color    frameFineColour    = sf::Color(81,203,32);
+    sf::Color    frameWarningColour = sf::Color(234,196,53);
+    sf::Color    frameDangerColour  = sf::Color(215,38,56);
+
+    uint32       frameContextMargin = 10;
+    uint32       frameContextHeight = 40;
+    uint32       frameContextOutlineWidth  = 2;
+    sf::Color    frameContextOutlineColour = sf::Color::Black;
+    uint32       frameLayerHeight = 20;
+    uint32       frameContextPadding = 10;
+
+
+
+    uint16       framerateThresholdFine     = 60;
+    uint16       framerateThresholdWarning  = 55;
+    uint16       framerateThresholdDanger   = 45;
+
+    uint16       frameSelected_id  = 0;
+    bool         frameSelected      = false;
+
+    bool         profilerSelected = false;
+    uint32       selectionSize = 5;
+};
+
 struct DebugMenuNode
 {
     string              display_name;
@@ -117,6 +207,7 @@ struct DebugMenuNode
     {
         bool  isSubMenuOpen;                // SUBMENU
         bool* bool_pointer;                 // ITEM_BOOL
+        DebugProfilerUiData ui_profiler;    // PROFILER
     };
 
     vector<DebugMenuNode*> children;
@@ -147,6 +238,13 @@ struct DebugMenuNode
     DebugMenuNode(DebugMenuNodeType type_)
     {
         type = type_;
+        switch(type)
+        {
+            case DEBUG_UI_NODE_PROFILER:
+            {
+                ui_profiler = DebugProfilerUiData();
+            }break;
+        };
     }
 };
 
@@ -158,6 +256,11 @@ struct DebugMenuUIState
     uint32  textSize = 20;
 
     sf::Vector2f draw(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, sf::Font &font);
+};
+
+struct debug_frame_record
+{
+    sf::Time duration = sf::milliseconds(0);
 };
 
 struct DebugStateInformation
@@ -174,6 +277,7 @@ struct DebugStateInformation
     bool     display_memorySelectedEntity=false;
 
     // System Flags
+    bool     simulation_paused=false;
     bool     display_FPS=true;
 
     // Map Flags
@@ -189,9 +293,11 @@ struct DebugStateInformation
     bool    display_TileAO=false;
 
     // Debug Data
-    uint32 kDebugRecordSnapshotSize = 120;
-    uint32 debugRecordSnapshotIndex=0;
-    debug_profile_record* debugRecordSnapshotArray;
+    uint32 kDebugRecordSnapshotSize = 180;
+    uint32 debugSnapshotIndex=0;
+    frame_event_summary debugEventSnapshotArray[180];
+    debug_frame_record debugFrameSnapshotArray[180];
+
 
     // UI Settings
     sf::Color colour_AdditionalInfo             = sf::Color::Yellow;
@@ -205,16 +311,6 @@ struct DebugStateInformation
 
     real32   lastRecordedFrameRate=60;
     int32    mouse_hovered_room_id = -1;
-
-    DebugStateInformation()
-    {
-        debugRecordSnapshotArray = (debug_profile_record*)malloc(kDebugRecordSnapshotSize*kTotalRecordCount*sizeof(debug_profile_record));
-    }
-
-    ~DebugStateInformation()
-    {
-        free(debugRecordSnapshotArray);
-    }
 };
 
 string numToStr(real32 value, int32 sf = -1);

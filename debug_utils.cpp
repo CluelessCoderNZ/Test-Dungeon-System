@@ -134,6 +134,7 @@ void initDebugState(DebugStateInformation &debug)
 
     debug.ui.rootNode.children.push_back(new DebugMenuNode("System"));
         debug.ui.rootNode.children[2]->children.push_back(new DebugMenuNode("Profiler"));
+            debug.ui.rootNode.children[2]->children[0]->children.push_back(new DebugMenuNode("Paused", &debug.simulation_paused));
             debug.ui.rootNode.children[2]->children[0]->children.push_back(new DebugMenuNode(DEBUG_UI_NODE_PROFILER));
         debug.ui.rootNode.children[2]->children.push_back(new DebugMenuNode("Display_FPS", &debug.display_FPS));
 
@@ -436,17 +437,76 @@ void updateDebugMemoryAnalyzer(DebugStateInformation &debug, GameMap &map, Input
 
 void collateDebugEventFrameData(DebugStateInformation &debug)
 {
-    memcpy(debug.debugRecordSnapshotArray+debug.debugRecordSnapshotIndex*kTotalRecordCount, &DebugProfileRecordArray, kTotalRecordCount*sizeof(debug_profile_record));
-    debug.debugRecordSnapshotIndex++;
-
-    for(uint32 i=0; i < kTotalRecordCount; i++)
+    if(!debug.simulation_paused)
     {
-        DebugProfileRecordArray[i].clockCount=0;
-        DebugProfileRecordArray[i].hitCount=0;
-    }
+        if(DebugEvent_Index > 0)
+        {
+            uint32 current_depth=1;
 
-    if(debug.debugRecordSnapshotIndex==debug.kDebugRecordSnapshotSize)
-        debug.debugRecordSnapshotIndex=0;
+            frame_event_summary* frame = &debug.debugEventSnapshotArray[debug.debugSnapshotIndex];
+            *frame = frame_event_summary();
+            frame_event_block* target = &frame->main_event;
+            target->record_id  = DebugEventList[0].record_id;
+            target->startClock = DebugEventList[0].clock;
+            target->hitCount  += DebugEventList[0].hitCount;
+
+            for(uint32 i = 1; i < DebugEvent_Index; i++)
+            {
+                debug_event* event = &DebugEventList[i];
+                switch(event->type)
+                {
+                    case DEBUG_EVENT_TIMED_BLOCK_START:
+                    {
+                        bool alreadyExists = false;
+                        for(uint32 x=0; x < target->children.size(); x++)
+                        {
+                            if(target->children[x]->record_id == event->record_id)
+                            {
+                                target = target->children[x];
+                                target->startClock = event->clock;
+                                target->hitCount  += event->hitCount;
+                                alreadyExists=true;
+
+                                current_depth++;
+                                break;
+                            }
+                        }
+
+                        if(!alreadyExists)
+                        {
+                            frame_event_block* new_target = new frame_event_block();
+                            target->children.push_back(new_target);
+                            new_target->parent = target;
+                            target = new_target;
+
+                            target->record_id  = event->record_id;
+                            target->startClock = event->clock;
+                            target->hitCount  += event->hitCount;
+
+                            current_depth++;
+                        }
+                    }break;
+
+                    case DEBUG_EVENT_TIMED_BLOCK_END:
+                    {
+                        target->clock_time += event->clock-target->startClock;
+                        if(target->parent != nullptr)
+                        {
+                            target = target->parent;
+                            current_depth--;
+                        }
+                    }break;
+                }
+                if(current_depth > frame->max_depth)
+                    frame->max_depth = current_depth;
+            }
+        }
+
+        debug.debugSnapshotIndex++;
+        if(debug.debugSnapshotIndex==debug.kDebugRecordSnapshotSize)
+            debug.debugSnapshotIndex=0;
+    }
+    DebugEvent_Index=0;
 }
 
 void draw_DebugMenuNodeSubMenu(sf::RenderWindow &window, InputState &input, DebugMenuNode &node, sf::Text &text, sf::Vector2f &position)
@@ -507,22 +567,124 @@ void draw_DebugMenuNodeItemBool(sf::RenderWindow &window, InputState &input, Deb
     position.y+=node.margin + text.getGlobalBounds().height;
 }
 
-void draw_DebugMenuNodeProfiler(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, DebugMenuNode &node, sf::Text &text, sf::Vector2f &position)
+void draw_DebugFrameEventBlock(frame_event_block *block, sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, DebugMenuNode &node, sf::Text &text, sf::Vector2f &position, uint32 width, uint32 layerHeight)
 {
-    string textStr;
-    for(uint32 i=0; i < kTotalRecordCount; i++)
+    sf::RectangleShape rect;
+    rect.setPosition(position);
+    rect.setSize(sf::Vector2f(width, layerHeight*node.ui_profiler.frameLayerHeight+node.ui_profiler.frameContextPadding));
+    rect.setFillColor(kDebug_ColourPalatte[block->record_id % DEBUG_MAX_COLOURPALATTE]);
+    rect.setOutlineColor(node.ui_profiler.frameContextOutlineColour);
+    rect.setOutlineThickness(node.ui_profiler.frameContextOutlineWidth);
+    window.draw(rect);
+
+
+    text.setCharacterSize(node.ui_profiler.frameLayerHeight*0.75);
+    text.setString(DebugProfileRecordArray[block->record_id].functionName+":"+variableToStr(DebugProfileRecordArray[block->record_id].lineNumber));
+    if(text.getGlobalBounds().width+5 < rect.getSize().x)
     {
-        debug_profile_record *record = debug.debugRecordSnapshotArray+i+(debug.debugRecordSnapshotIndex*kTotalRecordCount);
-        if(i > 0) textStr+="\n";
-        textStr+=record->functionName+"(): "+variableToStr(record->clockCount)+"cy";
+        text.setFillColor(sf::Color::White);
+        text.setPosition(position+sf::Vector2f(5,0));
+        window.draw(text);
     }
 
-    text.setPosition(position);
-    text.setString(textStr);
-    text.setOutlineColor(node.textOutlineColour);
-    window.draw(text);
+    sf::Vector2f child_position=position+sf::Vector2f(0,node.ui_profiler.frameLayerHeight);
+    for(uint32 i = 0; i < block->children.size(); i++)
+    {
+        real32 child_width=width*((real32)block->children[i]->clock_time/block->clock_time);
+        draw_DebugFrameEventBlock(block->children[i], window, input, debug, node, text, child_position, child_width, layerHeight-1);
+    }
+    position.x+=rect.getSize().x;
+}
 
-    position.y+=node.margin + text.getGlobalBounds().height;
+void draw_DebugMenuNodeProfiler(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, DebugMenuNode &node, sf::Text &text, sf::Vector2f &position)
+{
+    sf::RectangleShape frameSlot;
+    frameSlot.setSize(sf::Vector2f((real32)node.ui_profiler.viewport_size.x/debug.kDebugRecordSnapshotSize, node.ui_profiler.framebar_height));
+    frameSlot.setOutlineThickness(node.ui_profiler.framebar_slotOutlineWidth);
+    frameSlot.setOutlineColor(node.ui_profiler.frameOutlineColour);
+
+
+    for(uint32 i=0; i < debug.kDebugRecordSnapshotSize; i++)
+    {
+        frameSlot.setPosition(position+sf::Vector2f(i*frameSlot.getSize().x,0)+node.ui_profiler.viewportMargin);
+
+
+        if(debug.debugFrameSnapshotArray[i].duration.asMicroseconds() == 0)
+        {
+            frameSlot.setFillColor(node.ui_profiler.frameBlankColour);
+        }else if(i==debug.debugSnapshotIndex)
+        {
+            frameSlot.setFillColor(node.ui_profiler.frameCurrentColour);
+        }else{
+            real32 framerate = 1000000/debug.debugFrameSnapshotArray[i].duration.asMicroseconds();
+
+            if(framerate > node.ui_profiler.framerateThresholdFine)
+            {
+                frameSlot.setFillColor(node.ui_profiler.frameFineColour);
+            }else if(framerate > node.ui_profiler.framerateThresholdWarning)
+            {
+                real32 t = precentDiff(node.ui_profiler.framerateThresholdFine, node.ui_profiler.framerateThresholdWarning, framerate);
+                t = max(min(1.0f, t),0.0f);
+
+                frameSlot.setFillColor(interpolate(node.ui_profiler.frameFineColour, node.ui_profiler.frameWarningColour, t));
+            }else{
+                real32 t = precentDiff(node.ui_profiler.framerateThresholdWarning, node.ui_profiler.framerateThresholdDanger, framerate);
+                t = max(min(1.0f, t),0.0f);
+
+                frameSlot.setFillColor(interpolate(node.ui_profiler.frameWarningColour, node.ui_profiler.frameDangerColour, t));
+            }
+        }
+
+        window.draw(frameSlot);
+    }
+    // Viewing slot
+    uint32 selectedSlot = 0;
+    if(node.ui_profiler.frameSelected)
+    {
+        selectedSlot = node.ui_profiler.frameSelected_id;
+    }else if(debug.debugSnapshotIndex != 0)
+    {
+        selectedSlot = debug.debugSnapshotIndex - 1;
+    }else{
+        selectedSlot = debug.kDebugRecordSnapshotSize-1;
+    }
+
+    frameSlot.setPosition(position+sf::Vector2f(selectedSlot*frameSlot.getSize().x,0)+node.ui_profiler.viewportMargin);
+    frameSlot.setSize(frameSlot.getSize()-sf::Vector2f(1,0));
+    frameSlot.setOutlineThickness(node.ui_profiler.framebar_slotOutlineWidth);
+    frameSlot.setFillColor(node.ui_profiler.frameViewingColour);
+    frameSlot.setOutlineColor(node.ui_profiler.frameViewingOutlineColour);
+    window.draw(frameSlot);
+
+
+    sf::Vector2f eventBlockPosition = position+node.ui_profiler.viewportMargin+sf::Vector2f(0,node.ui_profiler.frameContextMargin+node.ui_profiler.framebar_height);
+    sf::Text eventBlockText = text;
+    node.ui_profiler.frameLayerHeight = (node.ui_profiler.viewport_size.y-eventBlockPosition.y+position.y)/(debug.debugEventSnapshotArray[selectedSlot].max_depth+0.5);
+    node.ui_profiler.frameContextPadding = node.ui_profiler.frameLayerHeight/2;
+
+    draw_DebugFrameEventBlock(&debug.debugEventSnapshotArray[selectedSlot].main_event, window, input, debug, node, eventBlockText, eventBlockPosition, node.ui_profiler.viewport_size.x, debug.debugEventSnapshotArray[selectedSlot].max_depth);
+
+
+    sf::RectangleShape selector;
+    selector.setSize(sf::Vector2f(node.ui_profiler.selectionSize, node.ui_profiler.selectionSize));
+    selector.setFillColor(sf::Color(200,200,200));
+    selector.setOrigin(node.ui_profiler.selectionSize/2.0, node.ui_profiler.selectionSize/2.0);
+    selector.setPosition(position+node.ui_profiler.viewport_size);
+    window.draw(selector);
+
+    if(input.action(MOUSE_LEFTCLICK).state == BUTTON_PRESSED && selector.getGlobalBounds().contains(input.mouse_screenPos.x, input.mouse_screenPos.y))
+    {
+        node.ui_profiler.profilerSelected=true;
+    }
+    if(node.ui_profiler.profilerSelected)
+    {
+        node.ui_profiler.viewport_size.x = min(max(input.mouse_screenPos.x - position.x, node.ui_profiler.min_viewport_size.x), window.getSize().x - position.x);
+        node.ui_profiler.viewport_size.y = min(max(input.mouse_screenPos.y - position.y, node.ui_profiler.min_viewport_size.y), window.getSize().y - position.y);
+
+        node.ui_profiler.profilerSelected=input.action(MOUSE_LEFTCLICK).isDown;
+    }
+
+    position.y+=node.margin+node.ui_profiler.viewport_size.y;
 }
 
 void DebugMenuNode::draw(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, sf::Text &text, sf::Vector2f &position, uint32 indent)

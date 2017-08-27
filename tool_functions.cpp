@@ -60,6 +60,16 @@ real32 interpolate(real32 a, real32 b, real32 t)
 	return a+((b-a)*t);
 }
 
+sf::Color interpolate(sf::Color a, sf::Color b, real32 t)
+{
+	return sf::Color((byte)interpolate((real32)a.r, (real32)b.r, t), (byte)interpolate((real32)a.g, (real32)b.g, t), (byte)interpolate((real32)a.b, (real32)b.b, t), (byte)interpolate((real32)a.a, (real32)b.a, t));
+}
+
+real32 precentDiff(real32 min, real32 max, real32 x)
+{
+	return (x-min)/(max-min);
+}
+
 void drawLine(sf::RenderTarget &target, sf::Vector2f p1, sf::Vector2f p2, sf::Color colour)
 {
 	sf::Vertex line[] =

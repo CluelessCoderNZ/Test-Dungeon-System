@@ -136,6 +136,7 @@ void GAME_UPDATE_AND_RENDER(GameState &state, InputState input, real32 t)
     // Simulate sim room
     for(uint32 i = 0; i < state.current_map.room[state.activeSimRoom].entity_list.size(); i++)
     {
+        NAMED_BLOCK("Entity_Update", 1);
         UpdateEntity(state.entity_controller, state, input, state.current_map.room[state.activeSimRoom].entity_list[i], entityUpdateT);
     }
 
@@ -144,9 +145,9 @@ void GAME_UPDATE_AND_RENDER(GameState &state, InputState input, real32 t)
     {
 
         uint32 connectID = state.current_map.room[state.activeSimRoom].connection[connect_index].secondaryRoom.id;
-        TIMED_BLOCK(state.current_map.room[connectID].entity_list.size());
         for(uint32 i = 0; i < state.current_map.room[connectID].entity_list.size(); i++)
         {
+            NAMED_BLOCK("Entity_Update", 1);
             UpdateEntity(state.entity_controller, state, input, state.current_map.room[connectID].entity_list[i], entityUpdateT);
         }
     }
@@ -252,6 +253,7 @@ void CleanUpGameState(GameState &state)
 void updateDebugState(GameState &state, InputState input)
 {
     TIMED_BLOCK(1);
+    state.pausedGameplay = state.debug.simulation_paused;
     // ------
     // UPDATE
     // ------

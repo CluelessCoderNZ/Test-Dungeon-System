@@ -107,8 +107,9 @@ int main(int argc, char* argv[])
                 }
             #endif
         }
+        gamestate.debug.debugFrameSnapshotArray[gamestate.debug.debugSnapshotIndex].duration = framerateTimer.getElapsedTime();
         collateDebugEventFrameData(gamestate.debug);
-        
+
         if(framerateTimer.getElapsedTime().asMicroseconds() < 16666)
         {
             sf::sleep(sf::microseconds(16666)-framerateTimer.getElapsedTime());
@@ -116,6 +117,7 @@ int main(int argc, char* argv[])
         frameTime = framerateTimer.restart();
         frameSpeed = frameTime.asMicroseconds()/16666.0;
         gamestate.debug.lastRecordedFrameRate = 1000000.0 / frameTime.asMicroseconds();
+
     }
 
     CleanUpGameState(gamestate);
