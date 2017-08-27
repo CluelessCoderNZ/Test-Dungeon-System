@@ -154,6 +154,7 @@ enum DebugMenuNodeType
     DEBUG_UI_NODE_END,
     DEBUG_UI_NODE_SUBMENU,
     DEBUG_UI_NODE_ITEM_BOOL,
+    DEBUG_UI_NODE_FUNCTION,
     DEBUG_UI_NODE_PROFILER
 };
 
@@ -180,8 +181,6 @@ struct DebugProfilerUiData
     uint32       frameLayerHeight = 20;
     uint32       frameContextPadding = 10;
 
-
-
     uint16       framerateThresholdFine     = 60;
     uint16       framerateThresholdWarning  = 55;
     uint16       framerateThresholdDanger   = 45;
@@ -198,18 +197,18 @@ struct DebugMenuNode
     string              display_name;
     DebugMenuNodeType   type;
 
-    sf::Color           textColour            = sf::Color::White;
+    sf::Color           textColour            = sf::Color(255,255,255);
     sf::Color           textHighlightColour   = sf::Color(255, 255, 125);
-    sf::Color           textOutlineColour     = sf::Color::Black;
+    sf::Color           textOutlineColour     = sf::Color(0,0,0);
     uint32              margin = 0;
 
     union
     {
-        bool  isSubMenuOpen;                // SUBMENU
-        bool* bool_pointer;                 // ITEM_BOOL
-        DebugProfilerUiData ui_profiler;    // PROFILER
+        bool  isSubMenuOpen;                              // SUBMENU
+        bool* bool_pointer;                               // ITEM_BOOL
+        void (*function_pointer)(DebugStateInformation&); // FUNCTION
+        DebugProfilerUiData ui_profiler;                  // PROFILER
     };
-
     vector<DebugMenuNode*> children;
 
     void draw(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, sf::Text &text, sf::Vector2f &position, uint32 indent);
@@ -235,6 +234,13 @@ struct DebugMenuNode
         bool_pointer = data;
     }
 
+    DebugMenuNode(string name, void (*func_ptr)(DebugStateInformation&))
+    {
+        display_name     = name;
+        type             = DEBUG_UI_NODE_FUNCTION;
+        function_pointer = func_ptr;
+    }
+
     DebugMenuNode(DebugMenuNodeType type_)
     {
         type = type_;
@@ -248,9 +254,17 @@ struct DebugMenuNode
     }
 };
 
+struct FreeRoamingDebugMenuNode
+{
+    bool          selectedByCursor=true;
+    sf::Vector2f  position;
+    DebugMenuNode *node = new DebugMenuNode();
+};
+
 struct DebugMenuUIState
 {
     DebugMenuNode rootNode = DebugMenuNode("Debug Menu");
+    vector<FreeRoamingDebugMenuNode> freeRoamingNodeList;
     sf::Vector2f  position = sf::Vector2f(0,0);
     uint32  indent=25;
     uint32  textSize = 20;

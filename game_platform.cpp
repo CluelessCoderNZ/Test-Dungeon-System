@@ -253,6 +253,12 @@ void CleanUpGameState(GameState &state)
 void updateDebugState(GameState &state, InputState input)
 {
     TIMED_BLOCK(1);
+
+    if(input.action(INPUT_SHIFT).isDown && input.action(INPUT_SPACE).state == BUTTON_PRESSED)
+    {
+        state.debug.simulation_paused=!state.debug.simulation_paused;
+    }
+
     state.pausedGameplay = state.debug.simulation_paused;
     // ------
     // UPDATE

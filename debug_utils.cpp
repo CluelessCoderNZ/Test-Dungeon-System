@@ -112,6 +112,27 @@ string variableToStr(bool value)
     return value ? "True" : "False";
 }
 
+void copyDebugMenuNode(DebugMenuNode *src, DebugMenuNode *dest)
+{
+    *dest = *src;
+    dest->children.clear();
+
+    for(uint32 i = 0; i < src->children.size(); i++)
+    {
+        dest->children.push_back(new DebugMenuNode());
+        copyDebugMenuNode(src->children[i], dest->children[i]);
+    }
+}
+
+void clearDebugRoamingMenuNodeList(DebugStateInformation &debug)
+{
+    for(uint32 i = 0; i < debug.ui.freeRoamingNodeList.size(); i++)
+    {
+        delete debug.ui.freeRoamingNodeList[i].node;
+    }
+    debug.ui.freeRoamingNodeList.clear();
+}
+
 void initDebugState(DebugStateInformation &debug)
 {
     debug.font.loadFromFile("Resources/Fonts/Debug.woff");
@@ -137,7 +158,8 @@ void initDebugState(DebugStateInformation &debug)
             debug.ui.rootNode.children[2]->children[0]->children.push_back(new DebugMenuNode("Paused", &debug.simulation_paused));
             debug.ui.rootNode.children[2]->children[0]->children.push_back(new DebugMenuNode(DEBUG_UI_NODE_PROFILER));
         debug.ui.rootNode.children[2]->children.push_back(new DebugMenuNode("Display_FPS", &debug.display_FPS));
-
+    debug.ui.rootNode.children.push_back(new DebugMenuNode("UI"));
+        debug.ui.rootNode.children[3]->children.push_back(new DebugMenuNode("ClearDebugNodes", &clearDebugRoamingMenuNodeList));
 }
 
 void updateDebugMemoryAnalyzer(DebugStateInformation &debug, GameMap &map, InputState &input)
@@ -509,10 +531,10 @@ void collateDebugEventFrameData(DebugStateInformation &debug)
     DebugEvent_Index=0;
 }
 
-void draw_DebugMenuNodeSubMenu(sf::RenderWindow &window, InputState &input, DebugMenuNode &node, sf::Text &text, sf::Vector2f &position)
+void draw_DebugMenuNodeSubMenu(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, DebugMenuNode *node, sf::Text &text, sf::Vector2f &position)
 {
-    string textStr = node.display_name;
-    if (node.isSubMenuOpen)
+    string textStr = node->display_name;
+    if (node->isSubMenuOpen)
     {
         textStr = "V "+textStr;
     }else{
@@ -521,64 +543,108 @@ void draw_DebugMenuNodeSubMenu(sf::RenderWindow &window, InputState &input, Debu
 
     text.setPosition(position);
     text.setString(textStr);
-    text.setOutlineColor(node.textOutlineColour);
+    text.setOutlineColor(node->textOutlineColour);
 
     // Mouse Input
     if(text.getGlobalBounds().contains(input.mouse_screenPos.x, input.mouse_screenPos.y))
     {
         if(input.action(MOUSE_LEFTCLICK).state == BUTTON_PRESSED)
         {
-            node.isSubMenuOpen = !node.isSubMenuOpen;
+            if(input.action(INPUT_CONTROL).isDown)
+            {
+                debug.ui.freeRoamingNodeList.push_back(FreeRoamingDebugMenuNode());
+                copyDebugMenuNode(node, debug.ui.freeRoamingNodeList[debug.ui.freeRoamingNodeList.size()-1].node);
+            }else{
+                node->isSubMenuOpen = !node->isSubMenuOpen;
+            }
         }else{
-            text.setFillColor(node.textHighlightColour);
+            text.setFillColor(node->textHighlightColour);
         }
     }else{
-        text.setFillColor(node.textColour);
+        text.setFillColor(node->textColour);
     }
 
     window.draw(text);
 
-    position.y+=node.margin + text.getGlobalBounds().height;
+    position.y+=node->margin + text.getGlobalBounds().height;
 }
 
-void draw_DebugMenuNodeItemBool(sf::RenderWindow &window, InputState &input, DebugMenuNode &node, sf::Text &text, sf::Vector2f &position)
+void draw_DebugMenuNodeItemBool(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, DebugMenuNode *node, sf::Text &text, sf::Vector2f &position)
 {
-    string textStr = node.display_name;
-    textStr = textStr+": "+variableToStr(*node.bool_pointer);
+    string textStr = node->display_name;
+    textStr = textStr+": "+variableToStr(*node->bool_pointer);
 
     text.setPosition(position);
     text.setString(textStr);
-    text.setOutlineColor(node.textOutlineColour);
+    text.setOutlineColor(node->textOutlineColour);
     // Mouse Input
     if(text.getGlobalBounds().contains(input.mouse_screenPos.x, input.mouse_screenPos.y))
     {
         if(input.action(MOUSE_LEFTCLICK).state == BUTTON_PRESSED)
         {
-            *node.bool_pointer = !(*node.bool_pointer);
+            if(input.action(INPUT_CONTROL).isDown)
+            {
+                debug.ui.freeRoamingNodeList.push_back(FreeRoamingDebugMenuNode());
+                copyDebugMenuNode(node, debug.ui.freeRoamingNodeList[debug.ui.freeRoamingNodeList.size()-1].node);
+            }else{
+                *node->bool_pointer = !(*node->bool_pointer);
+            }
         }else{
-            text.setFillColor(node.textHighlightColour);
+            text.setFillColor(node->textHighlightColour);
         }
     }else{
-        text.setFillColor(node.textColour);
+        text.setFillColor(node->textColour);
     }
 
     window.draw(text);
 
-    position.y+=node.margin + text.getGlobalBounds().height;
+    position.y+=node->margin + text.getGlobalBounds().height;
 }
 
-void draw_DebugFrameEventBlock(frame_event_block *block, sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, DebugMenuNode &node, sf::Text &text, sf::Vector2f &position, uint32 width, uint32 layerHeight)
+void draw_DebugMenuNodeItemFunction(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, DebugMenuNode *node, sf::Text &text, sf::Vector2f &position)
+{
+    string textStr = node->display_name;
+    textStr = textStr+"()";
+
+    text.setPosition(position);
+    text.setString(textStr);
+    text.setOutlineColor(node->textOutlineColour);
+    // Mouse Input
+    if(text.getGlobalBounds().contains(input.mouse_screenPos.x, input.mouse_screenPos.y))
+    {
+        if(input.action(MOUSE_LEFTCLICK).state == BUTTON_PRESSED)
+        {
+            if(input.action(INPUT_CONTROL).isDown)
+            {
+                debug.ui.freeRoamingNodeList.push_back(FreeRoamingDebugMenuNode());
+                copyDebugMenuNode(node, debug.ui.freeRoamingNodeList[debug.ui.freeRoamingNodeList.size()-1].node);
+            }else{
+                node->function_pointer(debug);
+            }
+        }else{
+            text.setFillColor(node->textHighlightColour);
+        }
+    }else{
+        text.setFillColor(node->textColour);
+    }
+
+    window.draw(text);
+
+    position.y+=node->margin + text.getGlobalBounds().height;
+}
+
+void draw_DebugFrameEventBlock(frame_event_block *block, sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, DebugMenuNode *node, sf::Text &text, sf::Vector2f &position, uint32 width, uint32 layerHeight)
 {
     sf::RectangleShape rect;
     rect.setPosition(position);
-    rect.setSize(sf::Vector2f(width, layerHeight*node.ui_profiler.frameLayerHeight+node.ui_profiler.frameContextPadding));
+    rect.setSize(sf::Vector2f(width, layerHeight*node->ui_profiler.frameLayerHeight+node->ui_profiler.frameContextPadding));
     rect.setFillColor(kDebug_ColourPalatte[block->record_id % DEBUG_MAX_COLOURPALATTE]);
-    rect.setOutlineColor(node.ui_profiler.frameContextOutlineColour);
-    rect.setOutlineThickness(node.ui_profiler.frameContextOutlineWidth);
+    rect.setOutlineColor(node->ui_profiler.frameContextOutlineColour);
+    rect.setOutlineThickness(node->ui_profiler.frameContextOutlineWidth);
     window.draw(rect);
 
 
-    text.setCharacterSize(node.ui_profiler.frameLayerHeight*0.75);
+    text.setCharacterSize(node->ui_profiler.frameLayerHeight*0.75);
     text.setString(DebugProfileRecordArray[block->record_id].functionName+":"+variableToStr(DebugProfileRecordArray[block->record_id].lineNumber));
     if(text.getGlobalBounds().width+5 < rect.getSize().x)
     {
@@ -587,7 +653,7 @@ void draw_DebugFrameEventBlock(frame_event_block *block, sf::RenderWindow &windo
         window.draw(text);
     }
 
-    sf::Vector2f child_position=position+sf::Vector2f(0,node.ui_profiler.frameLayerHeight);
+    sf::Vector2f child_position=position+sf::Vector2f(0,node->ui_profiler.frameLayerHeight);
     for(uint32 i = 0; i < block->children.size(); i++)
     {
         real32 child_width=width*((real32)block->children[i]->clock_time/block->clock_time);
@@ -596,95 +662,106 @@ void draw_DebugFrameEventBlock(frame_event_block *block, sf::RenderWindow &windo
     position.x+=rect.getSize().x;
 }
 
-void draw_DebugMenuNodeProfiler(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, DebugMenuNode &node, sf::Text &text, sf::Vector2f &position)
+void draw_DebugMenuNodeProfiler(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, DebugMenuNode *node, sf::Text &text, sf::Vector2f &position)
 {
+    node->ui_profiler.frameSelected = debug.simulation_paused;
+
     sf::RectangleShape frameSlot;
-    frameSlot.setSize(sf::Vector2f((real32)node.ui_profiler.viewport_size.x/debug.kDebugRecordSnapshotSize, node.ui_profiler.framebar_height));
-    frameSlot.setOutlineThickness(node.ui_profiler.framebar_slotOutlineWidth);
-    frameSlot.setOutlineColor(node.ui_profiler.frameOutlineColour);
+    frameSlot.setSize(sf::Vector2f((real32)node->ui_profiler.viewport_size.x/debug.kDebugRecordSnapshotSize, node->ui_profiler.framebar_height));
+    frameSlot.setOutlineThickness(node->ui_profiler.framebar_slotOutlineWidth);
+    frameSlot.setOutlineColor(node->ui_profiler.frameOutlineColour);
 
 
     for(uint32 i=0; i < debug.kDebugRecordSnapshotSize; i++)
     {
-        frameSlot.setPosition(position+sf::Vector2f(i*frameSlot.getSize().x,0)+node.ui_profiler.viewportMargin);
+        frameSlot.setPosition(position+sf::Vector2f(i*frameSlot.getSize().x,0)+node->ui_profiler.viewportMargin);
 
 
         if(debug.debugFrameSnapshotArray[i].duration.asMicroseconds() == 0)
         {
-            frameSlot.setFillColor(node.ui_profiler.frameBlankColour);
+            frameSlot.setFillColor(node->ui_profiler.frameBlankColour);
         }else if(i==debug.debugSnapshotIndex)
         {
-            frameSlot.setFillColor(node.ui_profiler.frameCurrentColour);
+            frameSlot.setFillColor(node->ui_profiler.frameCurrentColour);
         }else{
             real32 framerate = 1000000/debug.debugFrameSnapshotArray[i].duration.asMicroseconds();
 
-            if(framerate > node.ui_profiler.framerateThresholdFine)
+            if(framerate > node->ui_profiler.framerateThresholdFine)
             {
-                frameSlot.setFillColor(node.ui_profiler.frameFineColour);
-            }else if(framerate > node.ui_profiler.framerateThresholdWarning)
+                frameSlot.setFillColor(node->ui_profiler.frameFineColour);
+            }else if(framerate > node->ui_profiler.framerateThresholdWarning)
             {
-                real32 t = precentDiff(node.ui_profiler.framerateThresholdFine, node.ui_profiler.framerateThresholdWarning, framerate);
+                real32 t = precentDiff(node->ui_profiler.framerateThresholdFine, node->ui_profiler.framerateThresholdWarning, framerate);
                 t = max(min(1.0f, t),0.0f);
 
-                frameSlot.setFillColor(interpolate(node.ui_profiler.frameFineColour, node.ui_profiler.frameWarningColour, t));
+                frameSlot.setFillColor(interpolate(node->ui_profiler.frameFineColour, node->ui_profiler.frameWarningColour, t));
             }else{
-                real32 t = precentDiff(node.ui_profiler.framerateThresholdWarning, node.ui_profiler.framerateThresholdDanger, framerate);
+                real32 t = precentDiff(node->ui_profiler.framerateThresholdWarning, node->ui_profiler.framerateThresholdDanger, framerate);
                 t = max(min(1.0f, t),0.0f);
 
-                frameSlot.setFillColor(interpolate(node.ui_profiler.frameWarningColour, node.ui_profiler.frameDangerColour, t));
+                frameSlot.setFillColor(interpolate(node->ui_profiler.frameWarningColour, node->ui_profiler.frameDangerColour, t));
             }
+        }
+
+        if(input.action(MOUSE_LEFTCLICK).isDown && frameSlot.getGlobalBounds().contains(input.mouse_screenPos.x, input.mouse_screenPos.y))
+        {
+            node->ui_profiler.frameSelected = true;
+            debug.simulation_paused = true;
+            node->ui_profiler.frameSelected_id = i;
         }
 
         window.draw(frameSlot);
     }
     // Viewing slot
     uint32 selectedSlot = 0;
-    if(node.ui_profiler.frameSelected)
+    if(node->ui_profiler.frameSelected)
     {
-        selectedSlot = node.ui_profiler.frameSelected_id;
+        selectedSlot = node->ui_profiler.frameSelected_id;
     }else if(debug.debugSnapshotIndex != 0)
     {
         selectedSlot = debug.debugSnapshotIndex - 1;
+        node->ui_profiler.frameSelected_id=selectedSlot;
     }else{
         selectedSlot = debug.kDebugRecordSnapshotSize-1;
+        node->ui_profiler.frameSelected_id=selectedSlot;
     }
 
-    frameSlot.setPosition(position+sf::Vector2f(selectedSlot*frameSlot.getSize().x,0)+node.ui_profiler.viewportMargin);
+    frameSlot.setPosition(position+sf::Vector2f(selectedSlot*frameSlot.getSize().x,0)+node->ui_profiler.viewportMargin);
     frameSlot.setSize(frameSlot.getSize()-sf::Vector2f(1,0));
-    frameSlot.setOutlineThickness(node.ui_profiler.framebar_slotOutlineWidth);
-    frameSlot.setFillColor(node.ui_profiler.frameViewingColour);
-    frameSlot.setOutlineColor(node.ui_profiler.frameViewingOutlineColour);
+    frameSlot.setOutlineThickness(node->ui_profiler.framebar_slotOutlineWidth);
+    frameSlot.setFillColor(node->ui_profiler.frameViewingColour);
+    frameSlot.setOutlineColor(node->ui_profiler.frameViewingOutlineColour);
     window.draw(frameSlot);
 
 
-    sf::Vector2f eventBlockPosition = position+node.ui_profiler.viewportMargin+sf::Vector2f(0,node.ui_profiler.frameContextMargin+node.ui_profiler.framebar_height);
+    sf::Vector2f eventBlockPosition = position+node->ui_profiler.viewportMargin+sf::Vector2f(0,node->ui_profiler.frameContextMargin+node->ui_profiler.framebar_height);
     sf::Text eventBlockText = text;
-    node.ui_profiler.frameLayerHeight = (node.ui_profiler.viewport_size.y-eventBlockPosition.y+position.y)/(debug.debugEventSnapshotArray[selectedSlot].max_depth+0.5);
-    node.ui_profiler.frameContextPadding = node.ui_profiler.frameLayerHeight/2;
+    node->ui_profiler.frameLayerHeight = (node->ui_profiler.viewport_size.y-eventBlockPosition.y+position.y)/(debug.debugEventSnapshotArray[selectedSlot].max_depth+0.5);
+    node->ui_profiler.frameContextPadding = node->ui_profiler.frameLayerHeight/2;
 
-    draw_DebugFrameEventBlock(&debug.debugEventSnapshotArray[selectedSlot].main_event, window, input, debug, node, eventBlockText, eventBlockPosition, node.ui_profiler.viewport_size.x, debug.debugEventSnapshotArray[selectedSlot].max_depth);
+    draw_DebugFrameEventBlock(&debug.debugEventSnapshotArray[selectedSlot].main_event, window, input, debug, node, eventBlockText, eventBlockPosition, node->ui_profiler.viewport_size.x, debug.debugEventSnapshotArray[selectedSlot].max_depth);
 
 
     sf::RectangleShape selector;
-    selector.setSize(sf::Vector2f(node.ui_profiler.selectionSize, node.ui_profiler.selectionSize));
+    selector.setSize(sf::Vector2f(node->ui_profiler.selectionSize, node->ui_profiler.selectionSize));
     selector.setFillColor(sf::Color(200,200,200));
-    selector.setOrigin(node.ui_profiler.selectionSize/2.0, node.ui_profiler.selectionSize/2.0);
-    selector.setPosition(position+node.ui_profiler.viewport_size);
+    selector.setOrigin(node->ui_profiler.selectionSize/2.0, node->ui_profiler.selectionSize/2.0);
+    selector.setPosition(position+node->ui_profiler.viewport_size);
     window.draw(selector);
 
     if(input.action(MOUSE_LEFTCLICK).state == BUTTON_PRESSED && selector.getGlobalBounds().contains(input.mouse_screenPos.x, input.mouse_screenPos.y))
     {
-        node.ui_profiler.profilerSelected=true;
+        node->ui_profiler.profilerSelected=true;
     }
-    if(node.ui_profiler.profilerSelected)
+    if(node->ui_profiler.profilerSelected)
     {
-        node.ui_profiler.viewport_size.x = min(max(input.mouse_screenPos.x - position.x, node.ui_profiler.min_viewport_size.x), window.getSize().x - position.x);
-        node.ui_profiler.viewport_size.y = min(max(input.mouse_screenPos.y - position.y, node.ui_profiler.min_viewport_size.y), window.getSize().y - position.y);
+        node->ui_profiler.viewport_size.x = min(max(input.mouse_screenPos.x - position.x, node->ui_profiler.min_viewport_size.x), window.getSize().x - position.x);
+        node->ui_profiler.viewport_size.y = min(max(input.mouse_screenPos.y - position.y, node->ui_profiler.min_viewport_size.y), window.getSize().y - position.y);
 
-        node.ui_profiler.profilerSelected=input.action(MOUSE_LEFTCLICK).isDown;
+        node->ui_profiler.profilerSelected=input.action(MOUSE_LEFTCLICK).isDown;
     }
 
-    position.y+=node.margin+node.ui_profiler.viewport_size.y;
+    position.y+=node->margin+node->ui_profiler.viewport_size.y;
 }
 
 void DebugMenuNode::draw(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, sf::Text &text, sf::Vector2f &position, uint32 indent)
@@ -694,15 +771,19 @@ void DebugMenuNode::draw(sf::RenderWindow &window, InputState &input, DebugState
     {
         case DEBUG_UI_NODE_SUBMENU:
         {
-            draw_DebugMenuNodeSubMenu(window, input, *this, text, position);
+            draw_DebugMenuNodeSubMenu(window, input, debug, this, text, position);
         }break;
         case DEBUG_UI_NODE_ITEM_BOOL:
         {
-            draw_DebugMenuNodeItemBool(window, input, *this, text, position);
+            draw_DebugMenuNodeItemBool(window, input, debug, this, text, position);
+        }break;
+        case DEBUG_UI_NODE_FUNCTION:
+        {
+            draw_DebugMenuNodeItemFunction(window, input, debug, this, text, position);
         }break;
         case DEBUG_UI_NODE_PROFILER:
         {
-            draw_DebugMenuNodeProfiler(window, input, debug, *this, text, position);
+            draw_DebugMenuNodeProfiler(window, input, debug, this, text, position);
         }break;
     }
 
@@ -729,6 +810,36 @@ sf::Vector2f DebugMenuUIState::draw(sf::RenderWindow &window, InputState &input,
     sf::Vector2f position(0,0);
 
     rootNode.draw(window, input, debug, text, position, indent);
+
+    for(uint32 i=0; i < freeRoamingNodeList.size(); i++)
+    {
+        sf::RectangleShape selector;
+        selector.setSize(sf::Vector2f(5, 5));
+        selector.setFillColor(sf::Color(200,200,200));
+        selector.setOrigin(selector.getSize().x/2.0, selector.getSize().y/2.0);
+        selector.setPosition(freeRoamingNodeList[i].position);
+        window.draw(selector);
+
+        if(input.action(MOUSE_LEFTCLICK).state == BUTTON_PRESSED && selector.getGlobalBounds().contains(input.mouse_screenPos.x, input.mouse_screenPos.y))
+        {
+            freeRoamingNodeList[i].selectedByCursor=true;
+        }else if(input.action(MOUSE_RIGHTCLICK).state == BUTTON_PRESSED && selector.getGlobalBounds().contains(input.mouse_screenPos.x, input.mouse_screenPos.y))
+        {
+            delete freeRoamingNodeList[i].node;
+            freeRoamingNodeList.erase(freeRoamingNodeList.begin()+i);
+            i--;
+            continue;
+        }
+
+        if(freeRoamingNodeList[i].selectedByCursor)
+        {
+            freeRoamingNodeList[i].position.x = input.mouse_screenPos.x;
+            freeRoamingNodeList[i].position.y = input.mouse_screenPos.y;
+            freeRoamingNodeList[i].selectedByCursor = input.action(MOUSE_LEFTCLICK).isDown;
+        }
+        sf::Vector2f position = freeRoamingNodeList[i].position;
+        freeRoamingNodeList[i].node->draw(window, input, debug, text, position, indent);
+    }
 
     return position;
 }

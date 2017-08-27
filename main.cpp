@@ -30,6 +30,9 @@ int main(int argc, char* argv[])
     keybind.setKey(INPUT_DEBUG_TOGGLE, sf::Keyboard::Tilde);
     keybind.setKey(INPUT_DEBUG_ACTION_1, sf::Keyboard::Num1);
     keybind.setKey(INPUT_DEBUG_ACTION_2, sf::Keyboard::Num2);
+    keybind.setKey(INPUT_CONTROL, sf::Keyboard::LControl);
+    keybind.setKey(INPUT_SPACE, sf::Keyboard::Space);
+    keybind.setKey(INPUT_SHIFT, sf::Keyboard::LShift);
 
     gamestate.tileset = loadTilesetFromFile("Resources/Graphics/World/Tileset.png", sf::Vector2u(32,32));
 
