@@ -136,6 +136,7 @@ void clearDebugRoamingMenuNodeList(DebugStateInformation &debug)
 void initDebugState(DebugStateInformation &debug)
 {
     debug.font.loadFromFile("Resources/Fonts/Debug.woff");
+    debug.frameGraphTexture.create(debug.kDebugRecordSnapshotSize, 100);
 
     // Initalize UI State
     debug.ui.rootNode.children.push_back(new DebugMenuNode("Map"));
@@ -464,79 +465,6 @@ void updateDebugMemoryAnalyzer(DebugStateInformation &debug, GameMap &map, Input
     }
 }
 
-void collateDebugEventFrameData(DebugStateInformation &debug)
-{
-    if(!debug.simulation_paused)
-    {
-        if(DebugEvent_Index > 0)
-        {
-            uint32 current_depth=1;
-
-            frame_event_summary* frame = &debug.debugEventSnapshotArray[debug.debugSnapshotIndex];
-            *frame = frame_event_summary();
-            frame_event_block* target = &frame->main_event;
-            target->record_id  = DebugEventList[0].record_id;
-            target->startClock = DebugEventList[0].clock;
-            target->hitCount  += DebugEventList[0].hitCount;
-
-            for(uint32 i = 1; i < DebugEvent_Index; i++)
-            {
-                debug_event* event = &DebugEventList[i];
-                switch(event->type)
-                {
-                    case DEBUG_EVENT_TIMED_BLOCK_START:
-                    {
-                        bool alreadyExists = false;
-                        for(uint32 x=0; x < target->children.size(); x++)
-                        {
-                            if(target->children[x]->record_id == event->record_id)
-                            {
-                                target = target->children[x];
-                                target->startClock = event->clock;
-                                target->hitCount  += event->hitCount;
-                                alreadyExists=true;
-
-                                current_depth++;
-                                break;
-                            }
-                        }
-
-                        if(!alreadyExists)
-                        {
-                            frame_event_block* new_target = new frame_event_block();
-                            target->children.push_back(new_target);
-                            new_target->parent = target;
-                            target = new_target;
-
-                            target->record_id  = event->record_id;
-                            target->startClock = event->clock;
-                            target->hitCount  += event->hitCount;
-
-                            current_depth++;
-                        }
-                    }break;
-
-                    case DEBUG_EVENT_TIMED_BLOCK_END:
-                    {
-                        target->clock_time += event->clock-target->startClock;
-                        if(target->parent != nullptr)
-                        {
-                            target = target->parent;
-                            current_depth--;
-                        }
-                    }break;
-                }
-                if(current_depth > frame->max_depth)
-                    frame->max_depth = current_depth;
-            }
-        }
-
-        debug.debugSnapshotIndex++;
-        if(debug.debugSnapshotIndex==debug.kDebugRecordSnapshotSize)
-            debug.debugSnapshotIndex=0;
-    }
-    DebugEvent_Index=0;
-}
 
 void draw_DebugMenuNodeSubMenu(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, DebugMenuNode *node, sf::Text &text, sf::Vector2f &position)
 {
@@ -749,8 +677,34 @@ void draw_DebugFrameEventBlock(frame_event_block *block, sf::RenderWindow &windo
     position.x+=rect.getSize().x;
 }
 
+void draw_DebugFrameEventSlot(frame_event_block *block, sf::RenderTarget &window, DebugStateInformation &debug, sf::Vector2f &position, uint32 width, uint32 height)
+{
+    sf::RectangleShape rect;
+    rect.setPosition(position-sf::Vector2f(0,height));
+    rect.setSize(sf::Vector2f(width, height));
+    if(DebugProfileRecordArray[block->record_id].functionName=="Program")
+    {
+        rect.setFillColor(sf::Color(20,20,20));
+    }else if(DebugProfileRecordArray[block->record_id].functionName=="Idle")
+    {
+        rect.setFillColor(sf::Color(20,20,20));
+    }else{
+        rect.setFillColor(kDebug_ColourPalatte[block->record_id % DEBUG_MAX_COLOURPALATTE]);
+    }
+    window.draw(rect);
+
+    sf::Vector2f child_position=position;
+    for(uint32 i = 0; i < block->children.size(); i++)
+    {
+        real32 child_height=height*((real32)block->children[i]->clock_time/block->clock_time);
+        draw_DebugFrameEventSlot(block->children[i], window, debug, child_position, width, child_height);
+    }
+    position.y-=rect.getSize().y;
+}
+
 void draw_DebugMenuNodeProfiler(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, DebugMenuNode *node, sf::Text &text, sf::Vector2f &position)
 {
+    sf::Vector2f localPosition;
     node->ui_profiler.frameSelected = debug.simulation_paused;
 
     sf::RectangleShape frameSlot;
@@ -813,21 +767,31 @@ void draw_DebugMenuNodeProfiler(sf::RenderWindow &window, InputState &input, Deb
         node->ui_profiler.frameSelected_id=selectedSlot;
     }
 
+    localPosition=localPosition+node->ui_profiler.viewportMargin+sf::Vector2f(0,node->ui_profiler.framebar_height);
+
+    real32 graphHeight = (node->ui_profiler.viewport_size.y-localPosition.y)*node->ui_profiler.frameGraphHeight;
+
+    sf::Sprite graph;
+    graph.setTexture(debug.frameGraphTexture.getTexture());
+    graph.setScale(sf::Vector2f(node->ui_profiler.viewport_size.x/debug.frameGraphTexture.getSize().x,graphHeight/debug.frameGraphTexture.getSize().y));
+    graph.setPosition(position+localPosition);
+    window.draw(graph);
+
     frameSlot.setPosition(position+sf::Vector2f(selectedSlot*frameSlot.getSize().x,0)+node->ui_profiler.viewportMargin);
-    frameSlot.setSize(frameSlot.getSize()-sf::Vector2f(1,0));
+    frameSlot.setSize(frameSlot.getSize()+sf::Vector2f(-1,graphHeight*node->ui_profiler.frameSelected));
     frameSlot.setOutlineThickness(node->ui_profiler.framebar_slotOutlineWidth);
     frameSlot.setFillColor(node->ui_profiler.frameViewingColour);
     frameSlot.setOutlineColor(node->ui_profiler.frameViewingOutlineColour);
     window.draw(frameSlot);
 
+    localPosition=localPosition+sf::Vector2f(0,node->ui_profiler.frameContextMargin+graphHeight);
 
-    sf::Vector2f eventBlockPosition = position+node->ui_profiler.viewportMargin+sf::Vector2f(0,node->ui_profiler.frameContextMargin+node->ui_profiler.framebar_height);
+    sf::Vector2f eventBlockPosition = position+localPosition;
     sf::Text eventBlockText = text;
     node->ui_profiler.frameLayerHeight = (node->ui_profiler.viewport_size.y-eventBlockPosition.y+position.y)/(debug.debugEventSnapshotArray[selectedSlot].max_depth+0.5);
     node->ui_profiler.frameContextPadding = node->ui_profiler.frameLayerHeight/2;
 
-    draw_DebugFrameEventBlock(&debug.debugEventSnapshotArray[selectedSlot].main_event, window, input, debug, node, eventBlockText, eventBlockPosition, node->ui_profiler.viewport_size.x, debug.debugEventSnapshotArray[selectedSlot].max_depth);
-
+    draw_DebugFrameEventBlock(debug.debugEventSnapshotArray[selectedSlot].main_event.children[0], window, input, debug, node, eventBlockText, eventBlockPosition, node->ui_profiler.viewport_size.x, debug.debugEventSnapshotArray[selectedSlot].max_depth);
 
     sf::RectangleShape selector;
     selector.setSize(sf::Vector2f(node->ui_profiler.selectionSize, node->ui_profiler.selectionSize));
@@ -933,6 +897,83 @@ sf::Vector2f DebugMenuUIState::draw(sf::RenderWindow &window, InputState &input,
     }
 
     return position;
+}
+
+void collateDebugEventFrameData(DebugStateInformation &debug)
+{
+    if(!debug.simulation_paused)
+    {
+        if(DebugEvent_Index > 0)
+        {
+            uint32 current_depth=1;
+
+            frame_event_summary* frame = &debug.debugEventSnapshotArray[debug.debugSnapshotIndex];
+            *frame = frame_event_summary();
+            frame_event_block* target = &frame->main_event;
+            target->record_id  = DebugEventList[0].record_id;
+            target->startClock = DebugEventList[0].clock;
+            target->hitCount  += DebugEventList[0].hitCount;
+
+            for(uint32 i = 1; i < DebugEvent_Index; i++)
+            {
+                debug_event* event = &DebugEventList[i];
+                switch(event->type)
+                {
+                    case DEBUG_EVENT_TIMED_BLOCK_START:
+                    {
+                        bool alreadyExists = false;
+                        for(uint32 x=0; x < target->children.size(); x++)
+                        {
+                            if(target->children[x]->record_id == event->record_id)
+                            {
+                                target = target->children[x];
+                                target->startClock = event->clock;
+                                target->hitCount  += event->hitCount;
+                                alreadyExists=true;
+
+                                current_depth++;
+                                break;
+                            }
+                        }
+
+                        if(!alreadyExists)
+                        {
+                            frame_event_block* new_target = new frame_event_block();
+                            target->children.push_back(new_target);
+                            new_target->parent = target;
+                            target = new_target;
+
+                            target->record_id  = event->record_id;
+                            target->startClock = event->clock;
+                            target->hitCount  += event->hitCount;
+
+                            current_depth++;
+                        }
+                    }break;
+
+                    case DEBUG_EVENT_TIMED_BLOCK_END:
+                    {
+                        target->clock_time += event->clock-target->startClock;
+                        if(target->parent != nullptr)
+                        {
+                            target = target->parent;
+                            current_depth--;
+                        }
+                    }break;
+                }
+                if(current_depth > frame->max_depth)
+                    frame->max_depth = current_depth;
+            }
+            sf::Vector2f graphPos = sf::Vector2f(debug.debugSnapshotIndex, debug.frameGraphTexture.getSize().y);
+            draw_DebugFrameEventSlot(&debug.debugEventSnapshotArray[debug.debugSnapshotIndex].main_event, debug.frameGraphTexture, debug, graphPos, 1, debug.frameGraphTexture.getSize().y);
+            debug.frameGraphTexture.display();
+        }
+
+        debug.debugSnapshotIndex++;
+        if(debug.debugSnapshotIndex==debug.kDebugRecordSnapshotSize)
+            debug.debugSnapshotIndex=0;
+    }
+    DebugEvent_Index=0;
 }
 
 

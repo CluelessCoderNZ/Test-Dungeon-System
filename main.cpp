@@ -68,59 +68,64 @@ int main(int argc, char* argv[])
     while(gamestate.window.isOpen())
     {
         {
-            TIMED_BLOCK(1);
-            input = pollForKeyboardInput(input, keybind);
-            input.mouse_screenPos = sf::Mouse::getPosition(gamestate.window);
-
-            sf::Event event;
-            while(gamestate.window.pollEvent(event))
+            NAMED_BLOCK("Program", 1);
             {
-                switch(event.type)
+                TIMED_BLOCK(1);
+                input = pollForKeyboardInput(input, keybind);
+                input.mouse_screenPos = sf::Mouse::getPosition(gamestate.window);
+
+                sf::Event event;
+                while(gamestate.window.pollEvent(event))
                 {
-                    case sf::Event::Closed:
+                    switch(event.type)
                     {
-                        gamestate.window.close();
-                    }break;
+                        case sf::Event::Closed:
+                        {
+                            gamestate.window.close();
+                        }break;
 
-                    case sf::Event::MouseWheelScrolled :
-                    {
-                        input.mouseWheel.delta = event.mouseWheelScroll.delta;
-                    }break;
+                        case sf::Event::MouseWheelScrolled :
+                        {
+                            input.mouseWheel.delta = event.mouseWheelScroll.delta;
+                        }break;
 
-                    default:
-                        break;
-                }
-            }
-
-
-            gamestate.window.clear();
-            GAME_UPDATE_AND_RENDER(gamestate, input, frameSpeed);
-            gamestate.window.display();
-
-            #ifdef DEBUG_TOGGLE
-                if(input.action(INPUT_DEBUG_TOGGLE).state == BUTTON_PRESSED)
-                {
-                    gamestate.debug.isEnabled = !gamestate.debug.isEnabled;
-
-                    // Close debug windows
-                    if(!gamestate.debug.isEnabled)
-                    {
-                        gamestate.debug.memoryAnalyzer.window.close();
+                        default:
+                            break;
                     }
                 }
-            #endif
+
+
+                gamestate.window.clear();
+                GAME_UPDATE_AND_RENDER(gamestate, input, frameSpeed);
+                gamestate.window.display();
+
+                #ifdef DEBUG_TOGGLE
+                    if(input.action(INPUT_DEBUG_TOGGLE).state == BUTTON_PRESSED)
+                    {
+                        gamestate.debug.isEnabled = !gamestate.debug.isEnabled;
+
+                        // Close debug windows
+                        if(!gamestate.debug.isEnabled)
+                        {
+                            gamestate.debug.memoryAnalyzer.window.close();
+                        }
+                    }
+                #endif
+            }
+            gamestate.debug.debugFrameSnapshotArray[gamestate.debug.debugSnapshotIndex].duration = framerateTimer.getElapsedTime();
+            {
+                NAMED_BLOCK("Idle", 1);
+                if(framerateTimer.getElapsedTime().asMicroseconds() < 16666)
+                {
+
+                    sf::sleep(sf::microseconds(16666)-framerateTimer.getElapsedTime());
+                }
+                frameTime = framerateTimer.restart();
+                frameSpeed = frameTime.asMicroseconds()/16666.0;
+                gamestate.debug.lastRecordedFrameRate = 1000000.0 / frameTime.asMicroseconds();
+            }
         }
-        gamestate.debug.debugFrameSnapshotArray[gamestate.debug.debugSnapshotIndex].duration = framerateTimer.getElapsedTime();
         collateDebugEventFrameData(gamestate.debug);
-
-        if(framerateTimer.getElapsedTime().asMicroseconds() < 16666)
-        {
-            sf::sleep(sf::microseconds(16666)-framerateTimer.getElapsedTime());
-        }
-        frameTime = framerateTimer.restart();
-        frameSpeed = frameTime.asMicroseconds()/16666.0;
-        gamestate.debug.lastRecordedFrameRate = 1000000.0 / frameTime.asMicroseconds();
-
     }
 
     CleanUpGameState(gamestate);

@@ -118,16 +118,59 @@ struct Entity_State_Controller;
 struct Entity_Reference;
 struct DebugStateInformation;
 
-#define DEBUG_MAX_COLOURPALATTE 7
+#define DEBUG_MAX_COLOURPALATTE 50
 const sf::Color kDebug_ColourPalatte[] =
 {
-    sf::Color(242, 178, 51),
-    sf::Color(204, 76, 4),
-    sf::Color(51, 102, 204),
-    sf::Color(87, 166, 78),
-    sf::Color(178, 102, 229),
-    sf::Color(127, 204, 25),
-    sf::Color(222, 222, 108)
+    sf::Color(239, 204, 148),
+	sf::Color(169, 173, 232),
+	sf::Color(54, 247, 231),
+	sf::Color(59, 56, 183),
+	sf::Color(173, 34, 53),
+	sf::Color(234, 242, 87),
+	sf::Color(242, 98, 252),
+	sf::Color(87, 164, 219),
+	sf::Color(226, 110, 74),
+	sf::Color(46, 67, 221),
+	sf::Color(255, 174, 137),
+	sf::Color(135, 232, 111),
+	sf::Color(204, 232, 255),
+	sf::Color(124, 224, 96),
+	sf::Color(57, 90, 155),
+	sf::Color(207, 81, 219),
+	sf::Color(20, 135, 206),
+	sf::Color(133, 37, 249),
+	sf::Color(54, 193, 105),
+	sf::Color(252, 108, 158),
+	sf::Color(230, 188, 255),
+	sf::Color(125, 177, 206),
+	sf::Color(54, 91, 150),
+	sf::Color(209, 237, 111),
+	sf::Color(221, 135, 205),
+	sf::Color(237, 166, 182),
+	sf::Color(113, 232, 67),
+	sf::Color(21, 114, 119),
+	sf::Color(124, 234, 155),
+	sf::Color(146, 239, 158),
+	sf::Color(209, 154, 237),
+	sf::Color(216, 181, 75),
+	sf::Color(204, 225, 255),
+	sf::Color(194, 161, 252),
+	sf::Color(226, 113, 13),
+	sf::Color(231, 252, 174),
+	sf::Color(255, 134, 132),
+	sf::Color(198, 176, 242),
+	sf::Color(81, 204, 0),
+	sf::Color(232, 120, 211),
+	sf::Color(249, 159, 243),
+	sf::Color(239, 194, 249),
+	sf::Color(242, 171, 184),
+	sf::Color(229, 22, 222),
+	sf::Color(174, 214, 104),
+	sf::Color(155, 148, 221),
+	sf::Color(89, 214, 110),
+	sf::Color(232, 134, 239),
+	sf::Color(209, 242, 157),
+	sf::Color(146, 13, 198)
 };
 
 struct DebugMemoryAnalyzerState
@@ -170,8 +213,8 @@ struct DebugItemListData
 
 struct DebugProfilerUiData
 {
-    sf::Vector2f min_viewport_size = sf::Vector2f(500, 100);
-    sf::Vector2f viewport_size = sf::Vector2f(800,100);
+    sf::Vector2f min_viewport_size = sf::Vector2f(500, 170);
+    sf::Vector2f viewport_size = sf::Vector2f(800,170);
     sf::Vector2f viewportMargin = sf::Vector2f(0,10);
     uint32       framebar_height = 30;
     uint32       framebar_slotOutlineWidth=1;
@@ -179,10 +222,12 @@ struct DebugProfilerUiData
     sf::Color    frameViewingColour = sf::Color(0,0,0,0);
     sf::Color    frameViewingOutlineColour = sf::Color::White;
     sf::Color    frameOutlineColour = sf::Color::Black;
-    sf::Color    frameBlankColour   = sf::Color(100,100,100);
+    sf::Color    frameBlankColour   = sf::Color(20,20,20);
     sf::Color    frameFineColour    = sf::Color(81,203,32);
     sf::Color    frameWarningColour = sf::Color(234,196,53);
     sf::Color    frameDangerColour  = sf::Color(215,38,56);
+
+    real32       frameGraphHeight = 0.4;
 
     uint32       frameContextMargin = 10;
     uint32       frameContextHeight = 40;
@@ -317,6 +362,7 @@ struct DebugStateInformation
     DebugMenuUIState         ui;
 
     sf::Font font;
+    sf::RenderTexture frameGraphTexture;
     string   additionalInfo;
 
     // Camera Data
