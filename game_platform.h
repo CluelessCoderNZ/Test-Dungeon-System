@@ -24,13 +24,15 @@ using namespace std;
 
 struct GameState
 {
-    bool                    pausedGameplay  = false;
-    bool                    cameraUnlocked  = false;
+    bool                    pausedGameplay       = false;
+    bool                    cameraUnlocked       = false;
+    bool                    cameraEntityLinked   = true;
 
     sf::RenderWindow        window;
     sf::View                gameview;
     sf::View                screenView;
-    real32                  viewZoom = 2;
+    real32                  default_viewZoom = 0.5;
+    real32                  viewZoom = 0.5;
     Entity_Reference        player;
     Entity_State_Controller entity_controller;
     GameMap                 current_map;

@@ -286,6 +286,14 @@ struct DebugStateInformation
     sf::Font font;
     string   additionalInfo;
 
+    // Camera Data
+    real32   free_camera_normalspeed = 12;
+    real32   free_camera_fastspeed = 25;
+    real32   free_camera_zoom_normalspeed = 0.05;
+    real32   free_camera_zoom_fastspeed   = 0.12;
+    real32   free_camera_max_zoom = 20;
+    real32   free_camera_min_zoom = 0.1;
+
     // Entity Flags
     bool     follow_memorySelectedEntity=false;
     bool     display_memorySelectedEntity=false;
@@ -311,6 +319,8 @@ struct DebugStateInformation
     uint32 debugSnapshotIndex=0;
     frame_event_summary debugEventSnapshotArray[180];
     debug_frame_record debugFrameSnapshotArray[180];
+    real32   lastRecordedFrameRate=60;
+    int32    mouse_hovered_room_id = -1;
 
 
     // UI Settings
@@ -322,9 +332,6 @@ struct DebugStateInformation
     sf::Color colour_roomConnections            = sf::Color::Red;
     sf::Color colour_roomConnectionHighlight    = sf::Color(0,0,255);
     sf::Color colour_roomDifficulty             = sf::Color::Red;
-
-    real32   lastRecordedFrameRate=60;
-    int32    mouse_hovered_room_id = -1;
 };
 
 string numToStr(real32 value, int32 sf = -1);

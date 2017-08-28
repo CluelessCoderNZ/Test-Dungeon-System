@@ -153,47 +153,48 @@ void GAME_UPDATE_AND_RENDER(GameState &state, InputState input, real32 t)
     }
 
     // If camera entity room group changes then transition screen
-    if(getEntity(state.entity_controller, state.camera_follow).component & EC_POSITION && state.current_map.room[((Entity_Component_Position*)getEntityComponent(state.entity_controller, state.camera_follow, EC_POSITION))->room].room_group != state.cameraFollowInRoomGroup)
+    if(state.cameraEntityLinked)
     {
-        state.roomTransitionStart = getLockedCameraCenterPosition(state.camera_fixedView, localRoomPositionToScreen(state.current_map, *((Entity_Component_Position*)getEntityComponent(state.entity_controller, state.camera_follow, EC_POSITION))), state.gameview.getSize());
-
-        state.camera_fixedView  = scaleRect(getRoomGroupBounds(state.current_map, state.current_map.room[((Entity_Component_Position*)getEntityComponent(state.entity_controller, state.camera_follow, EC_POSITION))->room].room_group), sf::Vector2f(state.current_map.tileSize.x, state.current_map.tileSize.y));
-        state.camera_fixedView.height += state.tileset.tileSize.y-state.current_map.tileSize.y;
-        state.camera_fixedView.top    -= state.tileset.tileSize.y-state.current_map.tileSize.y;
-
-        // If hallway extend view to include connected doors of rooms
-        if(state.current_map.room[((Entity_Component_Position*)getEntityComponent(state.entity_controller, state.camera_follow, EC_POSITION))->room].room_type==0)
+        if(getEntity(state.entity_controller, state.camera_follow).component & EC_POSITION && state.current_map.room[((Entity_Component_Position*)getEntityComponent(state.entity_controller, state.camera_follow, EC_POSITION))->room].room_group != state.cameraFollowInRoomGroup)
         {
-            state.camera_fixedView.left   -= state.current_map.tileSize.x;
-            state.camera_fixedView.top    -= state.current_map.tileSize.y;
-            state.camera_fixedView.width  += state.current_map.tileSize.x*2;
-            state.camera_fixedView.height += state.current_map.tileSize.y*2;
+            state.roomTransitionStart = getLockedCameraCenterPosition(state.camera_fixedView, localRoomPositionToScreen(state.current_map, *((Entity_Component_Position*)getEntityComponent(state.entity_controller, state.camera_follow, EC_POSITION))), state.gameview.getSize());
+
+            state.camera_fixedView  = scaleRect(getRoomGroupBounds(state.current_map, state.current_map.room[((Entity_Component_Position*)getEntityComponent(state.entity_controller, state.camera_follow, EC_POSITION))->room].room_group), sf::Vector2f(state.current_map.tileSize.x, state.current_map.tileSize.y));
+            state.camera_fixedView.height += state.tileset.tileSize.y-state.current_map.tileSize.y;
+            state.camera_fixedView.top    -= state.tileset.tileSize.y-state.current_map.tileSize.y;
+
+            // If hallway extend view to include connected doors of rooms
+            if(state.current_map.room[((Entity_Component_Position*)getEntityComponent(state.entity_controller, state.camera_follow, EC_POSITION))->room].room_type==0)
+            {
+                state.camera_fixedView.left   -= state.current_map.tileSize.x;
+                state.camera_fixedView.top    -= state.current_map.tileSize.y;
+                state.camera_fixedView.width  += state.current_map.tileSize.x*2;
+                state.camera_fixedView.height += state.current_map.tileSize.y*2;
+            }
+
+            state.timer_roomTransition.restart(350);
+            state.timer_roomTransition.setTween(TWEEN_CUBIC_INOUT);
+            state.pausedGameplay=true;
+            state.cameraUnlocked=true;
+
+            state.roomTransitionEnd  = getLockedCameraCenterPosition(state.camera_fixedView, localRoomPositionToScreen(state.current_map, *((Entity_Component_Position*)getEntityComponent(state.entity_controller, state.camera_follow, EC_POSITION))), state.gameview.getSize());
+
         }
-
-        state.timer_roomTransition.restart(350);
-        state.timer_roomTransition.setTween(TWEEN_CUBIC_INOUT);
-        state.pausedGameplay=true;
-        state.cameraUnlocked=true;
-
-        state.roomTransitionEnd  = getLockedCameraCenterPosition(state.camera_fixedView, localRoomPositionToScreen(state.current_map, *((Entity_Component_Position*)getEntityComponent(state.entity_controller, state.camera_follow, EC_POSITION))), state.gameview.getSize());
-
-    }
-    if(!state.timer_roomTransition.hasFinished())
-    {
-        real32 t_value = state.timer_roomTransition.getValue(t);
-        state.camera_unlocked_position.x = interpolate(state.roomTransitionStart.x, state.roomTransitionEnd.x, t_value);
-        state.camera_unlocked_position.y = interpolate(state.roomTransitionStart.y, state.roomTransitionEnd.y, t_value);
-
-        if(state.timer_roomTransition.hasFinished())
+        if(!state.timer_roomTransition.hasFinished())
         {
-            state.pausedGameplay=false;
-            state.cameraUnlocked=false;
+            real32 t_value = state.timer_roomTransition.getValue(t);
+            state.camera_unlocked_position.x = interpolate(state.roomTransitionStart.x, state.roomTransitionEnd.x, t_value);
+            state.camera_unlocked_position.y = interpolate(state.roomTransitionStart.y, state.roomTransitionEnd.y, t_value);
+
+            if(state.timer_roomTransition.hasFinished())
+            {
+                state.pausedGameplay=false;
+                state.cameraUnlocked=false;
+            }
         }
     }
 
     // Viewport
-    state.viewZoom *= 1 - input.mouseWheel.delta*0.05;
-    state.viewZoom = min(max(state.viewZoom ,(real32)0.1), (real32)20.0);
 
     state.gameview.reset(sf::FloatRect(0, 0, state.window.getSize().x, state.window.getSize().y));
     state.screenView = state.gameview;
@@ -257,6 +258,27 @@ void updateDebugState(GameState &state, InputState input)
     if(input.action(INPUT_SHIFT).isDown && input.action(INPUT_SPACE).state == BUTTON_PRESSED)
     {
         state.debug.simulation_paused=!state.debug.simulation_paused;
+        state.cameraEntityLinked=!state.debug.simulation_paused;
+        state.cameraUnlocked=state.debug.simulation_paused;
+
+        if(getEntity(state.entity_controller, state.camera_follow).component & EC_POSITION)
+        {
+            state.camera_unlocked_position = localRoomPositionToScreen(state.current_map, *(Entity_Component_Position*)getEntityComponent(state.entity_controller, state.camera_follow, EC_POSITION));
+        }
+
+        state.viewZoom = state.default_viewZoom;
+    }
+
+    if(!state.cameraEntityLinked && state.cameraUnlocked)
+    {
+        real32 camera_speed = input.action(INPUT_SHIFT).isDown ? state.debug.free_camera_fastspeed : state.debug.free_camera_normalspeed;
+        camera_speed *= state.viewZoom;
+        state.camera_unlocked_position.x += (real32)input.action(INPUT_RIGHT).isDown*camera_speed + (real32)input.action(INPUT_LEFT).isDown*-camera_speed;
+        state.camera_unlocked_position.y += (real32)input.action(INPUT_DOWN).isDown*camera_speed + (real32)input.action(INPUT_UP).isDown*-camera_speed;
+
+        real32 zoom_speed = input.action(INPUT_SHIFT).isDown ? state.debug.free_camera_zoom_fastspeed : state.debug.free_camera_zoom_normalspeed;
+        state.viewZoom *= 1 - input.mouseWheel.delta*zoom_speed;
+        state.viewZoom = min(max(state.viewZoom ,(real32)state.debug.free_camera_min_zoom), (real32)state.debug.free_camera_max_zoom);
     }
 
     state.pausedGameplay = state.debug.simulation_paused;
