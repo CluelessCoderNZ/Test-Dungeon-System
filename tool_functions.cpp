@@ -70,6 +70,16 @@ real32 precentDiff(real32 min, real32 max, real32 x)
 	return (x-min)/(max-min);
 }
 
+string whitespace(uint32 size)
+{
+	string output;
+	for(uint32 i=0; i < size; i++)
+	{
+		output+=" ";
+	}
+	return output;
+}
+
 void drawLine(sf::RenderTarget &target, sf::Vector2f p1, sf::Vector2f p2, sf::Color colour)
 {
 	sf::Vertex line[] =

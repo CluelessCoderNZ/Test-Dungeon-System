@@ -13,6 +13,19 @@ using namespace std;
 
 struct GameState;
 
+enum entity_type
+{
+    ENTITY_PLAYER,
+    ENTITY_AI_DUMB
+};
+
+#define kEntityTypeCount 2
+string kEntityTypeString[] =
+{
+    "Player",
+    "DumbAI"
+};
+
 // Adding new systems and components notes:
 //-----------------------------------------
 // COMPONENTS:

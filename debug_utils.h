@@ -155,7 +155,17 @@ enum DebugMenuNodeType
     DEBUG_UI_NODE_SUBMENU,
     DEBUG_UI_NODE_ITEM_BOOL,
     DEBUG_UI_NODE_FUNCTION,
-    DEBUG_UI_NODE_PROFILER
+    DEBUG_UI_NODE_PROFILER,
+    DEBUG_UI_NODE_ITEM_LIST
+};
+
+struct DebugItemListData
+{
+    bool listIsOpen=false;
+    vector<string> option;
+    uint32*    selected_id=nullptr;
+
+    sf::Color selectedColour = sf::Color(48,230,255);
 };
 
 struct DebugProfilerUiData
@@ -200,7 +210,7 @@ struct DebugMenuNode
     sf::Color           textColour            = sf::Color(255,255,255);
     sf::Color           textHighlightColour   = sf::Color(255, 255, 125);
     sf::Color           textOutlineColour     = sf::Color(0,0,0);
-    uint32              margin = 0;
+    uint32              margin = 2;
 
     union
     {
@@ -209,6 +219,8 @@ struct DebugMenuNode
         void (*function_pointer)(DebugStateInformation&); // FUNCTION
         DebugProfilerUiData ui_profiler;                  // PROFILER
     };
+    DebugItemListData option_list;                        // ITEM_LIST
+
     vector<DebugMenuNode*> children;
 
     void draw(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, sf::Text &text, sf::Vector2f &position, uint32 indent);
@@ -234,6 +246,14 @@ struct DebugMenuNode
         bool_pointer = data;
     }
 
+    DebugMenuNode(string name, vector<string> list, uint32* update_ptr=nullptr)
+    {
+        display_name = name;
+        type         = DEBUG_UI_NODE_ITEM_LIST;
+        option_list.option = list;
+        option_list.selected_id = update_ptr;
+    }
+
     DebugMenuNode(string name, void (*func_ptr)(DebugStateInformation&))
     {
         display_name     = name;
@@ -243,6 +263,19 @@ struct DebugMenuNode
 
     DebugMenuNode(DebugMenuNodeType type_)
     {
+        type = type_;
+        switch(type)
+        {
+            case DEBUG_UI_NODE_PROFILER:
+            {
+                ui_profiler = DebugProfilerUiData();
+            }break;
+        };
+    }
+
+    DebugMenuNode(string name, DebugMenuNodeType type_)
+    {
+        display_name = name;
         type = type_;
         switch(type)
         {
@@ -295,6 +328,8 @@ struct DebugStateInformation
     real32   free_camera_min_zoom = 0.1;
 
     // Entity Flags
+    bool     user_clickToPlaceEntity=false;
+    uint32   user_clickToPlaceEntity_id=0;
     bool     follow_memorySelectedEntity=false;
     bool     display_memorySelectedEntity=false;
 

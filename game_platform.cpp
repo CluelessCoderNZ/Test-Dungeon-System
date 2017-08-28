@@ -68,7 +68,7 @@ void RenderWholeMap(Entity_State_Controller &controller, GameState &state)
                     MapTile tile = state.current_map.room[room_index].getTile(x, y);
                     if(state.tileset.tile[tile.tileID].isVisible && state.tileset.tile[tile.tileID].isFloor)
                     {
-                        state.tileset.tile[tile.tileID].sprite.setPosition(state.current_map.tileSize.x * (x+state.current_map.room[room_index].bounds.left), state.current_map.tileSize.y * (y+state.current_map.room[room_index].bounds.top));
+                        state.tileset.tile[tile.tileID].sprite.setPosition((real32)state.current_map.tileSize.x * (real32)(x+state.current_map.room[room_index].bounds.left), (real32)state.current_map.tileSize.y * (real32)(y+state.current_map.room[room_index].bounds.top));
                         state.window.draw(state.tileset.tile[tile.tileID].sprite);
 
                         // Ambient Occlusion
@@ -99,7 +99,7 @@ void RenderWholeMap(Entity_State_Controller &controller, GameState &state)
                     MapTile tile = state.current_map.room[room_index].getTile(x, y);
                     if(state.tileset.tile[tile.tileID].isVisible && !state.tileset.tile[tile.tileID].isFloor)
                     {
-                        state.tileset.tile[tile.tileID].sprite.setPosition(state.current_map.tileSize.x * (x+state.current_map.room[room_index].bounds.left), state.current_map.tileSize.y * (y+state.current_map.room[room_index].bounds.top));
+                        state.tileset.tile[tile.tileID].sprite.setPosition((real32)state.current_map.tileSize.x * (real32)(x+state.current_map.room[room_index].bounds.left), (real32)state.current_map.tileSize.y * (real32)(y+state.current_map.room[room_index].bounds.top));
                         state.window.draw(state.tileset.tile[tile.tileID].sprite);
                     }
                 }
@@ -308,6 +308,28 @@ void updateDebugState(GameState &state, InputState input)
     if(input.action(INPUT_DEBUG_ACTION_2).state == BUTTON_RELEASED)
     {
         state.debug.memoryAnalyzer.isEnabled=true;
+    }
+
+    if(state.debug.user_clickToPlaceEntity && (input.action(MOUSE_RIGHTCLICK).isDown || input.action(MOUSE_LEFTCLICK).state == BUTTON_PRESSED))
+    {
+        sf::Vector2f localTilePos = sf::Vector2f(input.mouse_globalPos.x/state.current_map.tileSize.x, input.mouse_globalPos.y/state.current_map.tileSize.y)-sf::Vector2f(state.current_map.room[(state.debug.mouse_hovered_room_id)].bounds.left, state.current_map.room[(state.debug.mouse_hovered_room_id)].bounds.top);
+
+        if(state.debug.mouse_hovered_room_id != -1 && !state.tileset.tile[state.current_map.room[state.debug.mouse_hovered_room_id].getTile(localTilePos.x, localTilePos.y).tileID].isSolid)
+        {
+            switch((entity_type)state.debug.user_clickToPlaceEntity_id)
+            {
+                case ENTITY_PLAYER:
+                {
+                    if(input.action(INPUT_CONTROL).isDown)
+                    {
+                        createPlayerEntity(state.current_map, state.entity_controller, Entity_Component_Position(localTilePos,state.debug.mouse_hovered_room_id));
+                    }else{
+                        *(Entity_Component_Position*)getEntityComponent(state.entity_controller, state.player, EC_POSITION) = Entity_Component_Position(localTilePos,state.debug.mouse_hovered_room_id);
+                    }
+                }break;
+                case ENTITY_AI_DUMB: createDumbAIEntity(state.current_map, state.entity_controller, Entity_Component_Position(localTilePos,state.debug.mouse_hovered_room_id));break;
+            }
+        }
     }
 
     // ------

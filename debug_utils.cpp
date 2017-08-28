@@ -149,6 +149,13 @@ void initDebugState(DebugStateInformation &debug)
         debug.ui.rootNode.children[0]->children.push_back(new DebugMenuNode("Display_RoomConnections", &debug.display_RoomConnections));
 
     debug.ui.rootNode.children.push_back(new DebugMenuNode("Entity"));
+        debug.ui.rootNode.children[1]->children.push_back(new DebugMenuNode("Entity Factory"));
+            debug.ui.rootNode.children[1]->children[0]->children.push_back(new DebugMenuNode("Type", {}, &debug.user_clickToPlaceEntity_id));
+            for(uint32 i = 0; i < kEntityTypeCount; i++)
+            {
+                debug.ui.rootNode.children[1]->children[0]->children[0]->option_list.option.push_back(kEntityTypeString[i]);
+            }
+            debug.ui.rootNode.children[1]->children[0]->children.push_back(new DebugMenuNode("Click To Add", &debug.user_clickToPlaceEntity));
         debug.ui.rootNode.children[1]->children.push_back(new DebugMenuNode("Display_SelectedEntity", &debug.display_memorySelectedEntity));
         debug.ui.rootNode.children[1]->children.push_back(new DebugMenuNode("Follow_SelectedEntity", &debug.follow_memorySelectedEntity));
         debug.ui.rootNode.children[1]->children.push_back(new DebugMenuNode("OpenEntityCache", &debug.memoryAnalyzer.isEnabled));
@@ -633,6 +640,86 @@ void draw_DebugMenuNodeItemFunction(sf::RenderWindow &window, InputState &input,
     position.y+=node->margin + text.getGlobalBounds().height;
 }
 
+void draw_DebugMenuNodeItemList(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, DebugMenuNode *node, sf::Text &text, sf::Vector2f &position)
+{
+    assert(node->option_list.selected_id!=nullptr);
+    real32 height=0;
+    string textStr = node->display_name+": "+node->option_list.option[*node->option_list.selected_id];
+
+    text.setPosition(position);
+    text.setString(textStr);
+    text.setFillColor(node->textColour);
+    text.setOutlineColor(node->textOutlineColour);
+
+    bool mouseOverTitleText=false;
+    mouseOverTitleText = text.getGlobalBounds().contains(input.mouse_screenPos.x, input.mouse_screenPos.y);
+    if(mouseOverTitleText)
+    {
+        text.setFillColor(node->textHighlightColour);
+    }
+
+    textStr = node->display_name+": ";
+    text.setString(textStr);
+    window.draw(text);
+
+    text.move(text.getGlobalBounds().width, 0);
+    text.setFillColor(node->option_list.selectedColour);
+    text.setString(node->option_list.option[*node->option_list.selected_id]);
+    window.draw(text);
+    height+=node->margin + text.getGlobalBounds().height;
+
+    // Mouse Input
+    if(!node->option_list.listIsOpen)
+    {
+        if(mouseOverTitleText)
+        {
+            if(input.action(MOUSE_LEFTCLICK).state == BUTTON_PRESSED)
+            {
+                if(input.action(INPUT_CONTROL).isDown)
+                {
+                    debug.ui.freeRoamingNodeList.push_back(FreeRoamingDebugMenuNode());
+                    copyDebugMenuNode(node, debug.ui.freeRoamingNodeList[debug.ui.freeRoamingNodeList.size()-1].node);
+                }else{
+                    node->option_list.listIsOpen=true;
+                }
+            }
+        }
+    }else{
+        for(uint32 i = 0; i < node->option_list.option.size(); i++)
+        {
+            if(i == *node->option_list.selected_id)
+            {
+                text.setFillColor(node->option_list.selectedColour);
+            }else{
+                text.setFillColor(node->textColour);
+            }
+            text.setPosition(position+sf::Vector2f(0,height));
+            text.setString(whitespace(2+node->display_name.length())+node->option_list.option[i]);
+
+            if(text.getGlobalBounds().contains(input.mouse_screenPos.x, input.mouse_screenPos.y))
+            {
+                if(input.action(MOUSE_LEFTCLICK).state == BUTTON_PRESSED)
+                {
+                    *node->option_list.selected_id=i;
+                }
+                text.setFillColor(node->textHighlightColour);
+            }
+
+            window.draw(text);
+            height+=node->margin + text.getGlobalBounds().height;
+        }
+
+        if(input.action(MOUSE_LEFTCLICK).state == BUTTON_PRESSED)
+        {
+            node->option_list.listIsOpen=false;
+        }
+    }
+
+    text.setFillColor(node->textColour);
+
+    position.y+=height;
+}
+
 void draw_DebugFrameEventBlock(frame_event_block *block, sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, DebugMenuNode *node, sf::Text &text, sf::Vector2f &position, uint32 width, uint32 layerHeight)
 {
     sf::RectangleShape rect;
@@ -776,6 +863,10 @@ void DebugMenuNode::draw(sf::RenderWindow &window, InputState &input, DebugState
         case DEBUG_UI_NODE_ITEM_BOOL:
         {
             draw_DebugMenuNodeItemBool(window, input, debug, this, text, position);
+        }break;
+        case DEBUG_UI_NODE_ITEM_LIST:
+        {
+            draw_DebugMenuNodeItemList(window, input, debug, this, text, position);
         }break;
         case DEBUG_UI_NODE_FUNCTION:
         {
