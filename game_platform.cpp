@@ -28,6 +28,7 @@ void UpdateEntity(Entity_State_Controller &controller, GameState &state, InputSt
 
 void RenderEntity(Entity_State_Controller &controller, GameState &state, Entity_Reference &ref)
 {
+    TIMED_BLOCK(1);
     Entity entity = getEntity(controller, ref);
 
     if(entity.system & (uint32)ES_CIRCLE_RENDER)
@@ -64,7 +65,6 @@ void RenderWholeMap(Entity_State_Controller &controller, GameState &state)
                 // In back render tiles
                 for(uint32 x = 0; x < roomRenderRegion.width; x++)
                 {
-                    TIMED_BLOCK(1);
                     MapTile tile = state.current_map.room[room_index].getTile(x, y);
                     if(state.tileset.tile[tile.tileID].isVisible && state.tileset.tile[tile.tileID].isFloor)
                     {

@@ -51,6 +51,7 @@ struct InputState
 
     sf::Vector2f mouse_globalPos;
     sf::Vector2i mouse_screenPos;
+    uint32       mouse_stillFrameCount=0;
 
     ButtonState action(InputAction input)
     {

@@ -1,10 +1,10 @@
  #include <iostream>
 #include <SFML/Graphics.hpp>
-
 #include "game_platform.h"
 #include "game_platform.cpp"
 #include "debug_utils.h"
 #include "debug_utils.cpp"
+#include "resource_manager.cpp"
 
 using namespace std;
 
@@ -45,14 +45,8 @@ int main(int argc, char* argv[])
     gamestate.current_map       = generateRandomGenericDungeonUsingMapFlow(random_engine, "Resources/World_Data/Room_Types/room_data.json");
     gamestate.player            = createPlayerEntity(gamestate.current_map, gamestate.entity_controller, Entity_Component_Position(sf::Vector2f(5,5), 0));
 
-
     gamestate.camera_fixedView  = scaleRect(getRoomGroupBounds(gamestate.current_map, gamestate.current_map.room[((Entity_Component_Position*)getEntityComponent(gamestate.entity_controller, gamestate.player, EC_POSITION))->room].room_group), sf::Vector2f(gamestate.current_map.tileSize.x, gamestate.current_map.tileSize.y));
     gamestate.camera_follow = gamestate.player;
-
-    for(uint32 i = 0; i < 500; i++)
-    {
-        createDumbAIEntity(gamestate.current_map, gamestate.entity_controller, Entity_Component_Position(sf::Vector2f(5,5), 0));
-    }
 
     gamestate.tileset.tile[2].isSolid               = true;
     gamestate.tileset.tile[2].isFloor               = false;
@@ -71,34 +65,48 @@ int main(int argc, char* argv[])
             NAMED_BLOCK("Program", 1);
             {
                 TIMED_BLOCK(1);
-                input = pollForKeyboardInput(input, keybind);
-                input.mouse_screenPos = sf::Mouse::getPosition(gamestate.window);
-
-                sf::Event event;
-                while(gamestate.window.pollEvent(event))
                 {
-                    switch(event.type)
+                    NAMED_BLOCK("pollForKeyboardInput", 1);
+                    if(input.mouse_screenPos == sf::Mouse::getPosition(gamestate.window))
                     {
-                        case sf::Event::Closed:
-                        {
-                            gamestate.window.close();
-                        }break;
+                        input.mouse_stillFrameCount++;
+                    }else{
+                        input.mouse_stillFrameCount=0;
+                    }
+                    input = pollForKeyboardInput(input, keybind);
+                    input.mouse_screenPos = sf::Mouse::getPosition(gamestate.window);
+                }
 
-                        case sf::Event::MouseWheelScrolled :
+                {
+                    NAMED_BLOCK("OSEventHandling", 1);
+                    sf::Event event;
+                    while(gamestate.window.pollEvent(event))
+                    {
+                        switch(event.type)
                         {
-                            input.mouseWheel.delta = event.mouseWheelScroll.delta;
-                        }break;
+                            case sf::Event::Closed:
+                            {
+                                gamestate.window.close();
+                            }break;
 
-                        default:
-                            break;
+                            case sf::Event::MouseWheelScrolled :
+                            {
+                                input.mouseWheel.delta = event.mouseWheelScroll.delta;
+                            }break;
+
+                            default:
+                                break;
+                        }
                     }
                 }
 
 
                 gamestate.window.clear();
                 GAME_UPDATE_AND_RENDER(gamestate, input, frameSpeed);
-                gamestate.window.display();
-
+                {
+                    NAMED_BLOCK("OSWindowDisplay", 1);
+                    gamestate.window.display();
+                }
                 #ifdef DEBUG_TOGGLE
                     if(input.action(INPUT_DEBUG_TOGGLE).state == BUTTON_PRESSED)
                     {

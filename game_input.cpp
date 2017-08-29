@@ -20,6 +20,7 @@ ButtonTransitionState getButtonTriggerState(bool oldState, bool currentState)
 InputState pollForKeyboardInput(InputState old, Keybind keybind)
 {
     InputState current;
+    current.mouse_stillFrameCount = old.mouse_stillFrameCount;
 
     // Update key states
     for(uint16 i = 0; i < KEY_ACTION_MAXCOUNT; i++)

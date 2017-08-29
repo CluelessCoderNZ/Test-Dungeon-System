@@ -227,7 +227,7 @@ struct DebugProfilerUiData
     sf::Color    frameWarningColour = sf::Color(234,196,53);
     sf::Color    frameDangerColour  = sf::Color(215,38,56);
 
-    real32       frameGraphHeight = 0.4;
+    real32       frameGraphHeight = 0.5;
 
     uint32       frameContextMargin = 10;
     uint32       frameContextHeight = 40;
@@ -239,6 +239,8 @@ struct DebugProfilerUiData
     uint16       framerateThresholdFine     = 60;
     uint16       framerateThresholdWarning  = 55;
     uint16       framerateThresholdDanger   = 45;
+
+    string       tooltip_text="";
 
     uint16       frameSelected_id  = 0;
     bool         frameSelected      = false;
@@ -262,8 +264,8 @@ struct DebugMenuNode
         bool  isSubMenuOpen;                              // SUBMENU
         bool* bool_pointer;                               // ITEM_BOOL
         void (*function_pointer)(DebugStateInformation&); // FUNCTION
-        DebugProfilerUiData ui_profiler;                  // PROFILER
     };
+    DebugProfilerUiData ui_profiler;                  // PROFILER
     DebugItemListData option_list;                        // ITEM_LIST
 
     vector<DebugMenuNode*> children;
@@ -339,10 +341,23 @@ struct FreeRoamingDebugMenuNode
     DebugMenuNode *node = new DebugMenuNode();
 };
 
+struct debug_ui_tooltip
+{
+    sf::Vector2i position;
+    string       text;
+
+    debug_ui_tooltip(string _text, sf::Vector2i _position)
+    {
+        text = _text;
+        position = _position;
+    }
+};
+
 struct DebugMenuUIState
 {
     DebugMenuNode rootNode = DebugMenuNode("Debug Menu");
     vector<FreeRoamingDebugMenuNode> freeRoamingNodeList;
+    vector<debug_ui_tooltip>         tooltipList;
     sf::Vector2f  position = sf::Vector2f(0,0);
     uint32  indent=25;
     uint32  textSize = 20;
