@@ -11,7 +11,7 @@ COMMON_OPTIONS="-std=c++11 -DDEBUG_TOGGLE -Wreturn-type"
 
 BUILD_AND_RUN=0
 
-while getopts "Rpfdo:" opt; do
+while getopts "Rpf:do:" opt; do
     case "$opt" in
     R)
 	BUILD_AND_RUN=1
@@ -20,7 +20,7 @@ while getopts "Rpfdo:" opt; do
 	COMMON_OPTIONS="$COMMON_OPTIONS -O3"
 	;;
     f)
-	COMPILER="clang"
+	COMMON_OPTIONS="$COMMON_OPTIONS $OPTARG"
 	;;
     o)
 	PROGRAM_NAME=$OPTARG
