@@ -32,6 +32,11 @@ void reloadDebugItemList(DebugStateInformation &debug, DebugMenuNode *node)
     debug.trigger_reloadItemList=true;
 }
 
+void reloadDebugResourceManager(DebugStateInformation &debug, DebugMenuNode *node)
+{
+    ResourceManager::instance().reloadAll();
+}
+
 void initDebugState(DebugStateInformation &debug)
 {
     debug.font.loadFromFile("Resources/Fonts/Debug.woff");
@@ -40,6 +45,7 @@ void initDebugState(DebugStateInformation &debug)
     // Initalize UI State
     debug.ui.addNode(new DebugMenuNode("Map"));
         debug.ui.addNode(new DebugMenuNode("Render"));
+            debug.ui.addNode(new DebugMenuNode("ReloadTextures", &reloadDebugResourceManager));
             debug.ui.addNode(new DebugMenuNode("Display_RoomBoundaries", &debug.display_RoomBoundaries));
             debug.ui.addNode(new DebugMenuNode("Display_RoomGraph", &debug.display_RoomGraph));
             debug.ui.addNode(new DebugMenuNode("Display_TileGrid", &debug.display_TileGrid));

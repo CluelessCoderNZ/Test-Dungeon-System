@@ -139,6 +139,7 @@ int main(int argc, char* argv[])
     }
 
     CleanUpGameState(gamestate);
+    delete &ResourceManager::instance();
     return 0;
 }
 

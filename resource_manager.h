@@ -39,9 +39,11 @@ struct resource_memory_bucket
     {
         data = (byte*)malloc(size);
     }
+
     ~resource_memory_bucket()
     {
-        free(data);
+        // NOTE(Connor): Freeing Malloc Causes Crashes at program end therefore I'm allowing the OS to clean up instead
+        //free(data);
     }
 };
 
@@ -50,8 +52,12 @@ class ResourceManager
     public:
         // Instance Functions
         ResourceManager();
+        ~ResourceManager();
         static ResourceManager& instance();                 // Returns Instance Of Resource
 
+
+        void            reloadAll();
+        void            loadFromFile(Resource_Type type, resource_memory_location location, string name);
         resource_memory_location getNewMemoryLocation(uint32 size);
         resource_handle create(Resource_Type type, string name);
         resource_handle load(Resource_Type type, string name);

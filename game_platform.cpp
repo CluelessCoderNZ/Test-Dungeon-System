@@ -26,13 +26,16 @@ void UpdateEntity(Entity_State_Controller &controller, GameState &state, InputSt
         ref.sort_key = ((Entity_Component_Position*)getEntityComponent(controller, ref, EC_POSITION))->position.y;
 }
 
-void RenderEntity(Entity_State_Controller &controller, GameState &state, Entity_Reference &ref)
+void RenderEntity(Entity_State_Controller &controller, GameState &state, sf::FloatRect &viewport, Entity_Reference &ref)
 {
     TIMED_BLOCK(1);
     Entity entity = getEntity(controller, ref);
 
-    if(entity.system & (uint32)ES_CIRCLE_RENDER)
-        Entity_System_CircleRender(controller, &state.window, state.current_map, ref);
+    if(viewport.contains(localRoomPositionToScreen(state.current_map, *((Entity_Component_Position*)getEntityComponent(controller, ref, EC_POSITION)))))
+    {
+        if(entity.system & (uint32)ES_CIRCLE_RENDER)
+            Entity_System_CircleRender(controller, &state.window, state.current_map, ref);
+    }
 }
 
 void RenderWholeMap(Entity_State_Controller &controller, GameState &state)
@@ -40,8 +43,10 @@ void RenderWholeMap(Entity_State_Controller &controller, GameState &state)
     TIMED_BLOCK(1);
 
     // Todo apply X restictions
-    sf::IntRect pixelViewRegion = sf::IntRect(state.gameview.getCenter().x - state.gameview.getSize().x/2, state.gameview.getCenter().y - state.gameview.getSize().y/2, state.gameview.getSize().x, state.gameview.getSize().y);
+    sf::IntRect   pixelViewRegion = sf::IntRect(state.gameview.getCenter().x - state.gameview.getSize().x/2, state.gameview.getCenter().y - state.gameview.getSize().y/2, state.gameview.getSize().x, state.gameview.getSize().y);
     sf::FloatRect viewRegion = scaleRect(pixelViewRegion, sf::Vector2f((real32)1.0/state.current_map.tileSize.x, (real32)1.0/state.current_map.tileSize.y));
+    sf::FloatRect entityViewRegion(pixelViewRegion.left, pixelViewRegion.top, pixelViewRegion.width, pixelViewRegion.height);
+
     sf::IntRect renderRegion(viewRegion.left-2, viewRegion.top-2, viewRegion.width+4, viewRegion.height+4);
 
     for(uint32 sortRoom_index = 0; sortRoom_index < state.current_map.room.size(); sortRoom_index++)
@@ -68,7 +73,8 @@ void RenderWholeMap(Entity_State_Controller &controller, GameState &state)
                     MapTile tile = state.current_map.room[room_index].getTile(x, y);
                     if(state.tileset.tile[tile.tileID].isVisible && state.tileset.tile[tile.tileID].isFloor)
                     {
-                        state.tileset.tile[tile.tileID].sprite.setPosition((int32)((int32)state.current_map.tileSize.x * (int32)(x+state.current_map.room[room_index].bounds.left)), (int32)((int32)state.current_map.tileSize.y * (int32)(y+state.current_map.room[room_index].bounds.top)));
+                        state.tileset.tile[tile.tileID].sprite.setPosition((real32)((real32)state.current_map.tileSize.x * (real32)(x+state.current_map.room[room_index].bounds.left)), (real32)((real32)state.current_map.tileSize.y * (real32)(y+state.current_map.room[room_index].bounds.top)));
+                        state.tileset.tile[tile.tileID].sprite.setPosition(floor(state.tileset.tile[tile.tileID].sprite.getPosition().x), floor(state.tileset.tile[tile.tileID].sprite.getPosition().y));
                         state.window.draw(state.tileset.tile[tile.tileID].sprite);
 
                         // Ambient Occlusion
@@ -89,7 +95,7 @@ void RenderWholeMap(Entity_State_Controller &controller, GameState &state)
                 while(entity_index < state.current_map.room[room_index].entity_list.size() &&
                       state.current_map.room[room_index].entity_list[entity_index].sort_key <= y)
                 {
-                    RenderEntity(controller, state, state.current_map.room[room_index].entity_list[entity_index++]);
+                    RenderEntity(controller, state, entityViewRegion, state.current_map.room[room_index].entity_list[entity_index++]);
                 }
 
 
@@ -99,7 +105,8 @@ void RenderWholeMap(Entity_State_Controller &controller, GameState &state)
                     MapTile tile = state.current_map.room[room_index].getTile(x, y);
                     if(state.tileset.tile[tile.tileID].isVisible && !state.tileset.tile[tile.tileID].isFloor)
                     {
-                        state.tileset.tile[tile.tileID].sprite.setPosition((int32)((int32)state.current_map.tileSize.x * (int32)(x+state.current_map.room[room_index].bounds.left)), (int32)((int32)state.current_map.tileSize.y * (int32)(y+state.current_map.room[room_index].bounds.top)));
+                        state.tileset.tile[tile.tileID].sprite.setPosition((real32)((real32)state.current_map.tileSize.x * (real32)(x+state.current_map.room[room_index].bounds.left)), (real32)((real32)state.current_map.tileSize.y * (real32)(y+state.current_map.room[room_index].bounds.top)));
+                        state.tileset.tile[tile.tileID].sprite.setPosition(floor(state.tileset.tile[tile.tileID].sprite.getPosition().x), floor(state.tileset.tile[tile.tileID].sprite.getPosition().y));
                         state.window.draw(state.tileset.tile[tile.tileID].sprite);
                     }
                 }
@@ -196,17 +203,24 @@ void GAME_UPDATE_AND_RENDER(GameState &state, InputState input, real32 t)
 
     // Viewport
 
-    state.gameview.reset(sf::FloatRect(0, 0, state.window.getSize().x, state.window.getSize().y));
+    state.gameview.reset(sf::FloatRect(0, 0, (uint32)state.window.getSize().x, (uint32)state.window.getSize().y));
     state.screenView = state.gameview;
     state.gameview.zoom(state.viewZoom);
+    state.gameview.setSize(round(state.gameview.getSize().x), round(state.gameview.getSize().y));
 
     if(state.cameraUnlocked)
     {
-        state.gameview.setCenter(state.camera_unlocked_position);
+        sf::Vector2f center = state.camera_unlocked_position;
+        center.x = round(center.x+0.5f);
+        center.y = round(center.y+0.5f);
+        state.gameview.setCenter(center);
     }
     else
     {
-        state.gameview.setCenter(getLockedCameraCenterPosition(state.camera_fixedView, localRoomPositionToScreen(state.current_map, *((Entity_Component_Position*)getEntityComponent(state.entity_controller, state.camera_follow, EC_POSITION))), state.gameview.getSize()));
+        sf::Vector2f center = getLockedCameraCenterPosition(state.camera_fixedView, localRoomPositionToScreen(state.current_map, *((Entity_Component_Position*)getEntityComponent(state.entity_controller, state.camera_follow, EC_POSITION))), state.gameview.getSize());
+        center.x = round(center.x+0.5f);
+        center.y = round(center.y+0.5f);
+        state.gameview.setCenter(center);
     }
     sf::View temp = state.gameview;
     temp.zoom(10);
@@ -256,11 +270,15 @@ void updateDebugState(GameState &state, InputState input)
     TIMED_BLOCK(1);
     state.debug.gamestate = &state;
 
+    if(!state.cameraUnlocked)
+        state.pausedGameplay=state.debug.simulation_paused;
+
     if(input.action(INPUT_SHIFT).isDown && input.action(INPUT_SPACE).state == BUTTON_PRESSED)
     {
         state.debug.simulation_paused=!state.debug.simulation_paused;
         state.cameraEntityLinked=!state.debug.simulation_paused;
         state.cameraUnlocked=state.debug.simulation_paused;
+        state.pausedGameplay=state.debug.simulation_paused;
 
         if(getEntity(state.entity_controller, state.camera_follow).component & EC_POSITION)
         {
@@ -281,8 +299,6 @@ void updateDebugState(GameState &state, InputState input)
         state.viewZoom *= 1 - input.mouseWheel.delta*zoom_speed;
         state.viewZoom = min(max(state.viewZoom ,(real32)state.debug.free_camera_min_zoom), (real32)state.debug.free_camera_max_zoom);
     }
-
-    state.pausedGameplay = state.debug.simulation_paused;
 
     // ------
     // UPDATE

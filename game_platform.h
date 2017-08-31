@@ -38,7 +38,7 @@ struct GameState
     Entity_State_Controller entity_controller;
     GameMap                 current_map;
     Tileset                 tileset;
-    ItemManager             item_manager; 
+    ItemManager             item_manager;
 
     uint32                  activeSimRoom=0;
 
@@ -57,7 +57,7 @@ struct GameState
 sf::Vector2f getLockedCameraCenterPosition(sf::FloatRect cameraLockBounds, sf::Vector2f targetCenter, sf::Vector2f cameraSize);
 
 void UpdateEntity(Entity_State_Controller &controller, GameState &state, InputState &input, Entity_Reference &ref, real32 t);
-void RenderEntity(Entity_State_Controller &controller, GameState &state, Entity_Reference &ref);
+void RenderEntity(Entity_State_Controller &controller, GameState &state, sf::FloatRect &viewport, Entity_Reference &ref);
 void RenderWholeMap(Entity_State_Controller &controller, GameState &state);
 void RenderByTargetRoom(Entity_State_Controller &controller, GameState &state);
 void GAME_UPDATE_AND_RENDER(GameState &state, InputState input, real32 t);

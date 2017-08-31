@@ -4,7 +4,7 @@
 
 ResourceManager::ResourceManager()
 {
-    resource_memory_list.push_back(resource_memory_bucket());
+    resource_memory_list.resize(resource_memory_list.size()+1);
 
     defaultErrorResource[(uint32)RESOURCE_TEXTURE] = load(RESOURCE_TEXTURE, "Resources/Graphics/World/ErrorTexture.png");
     getTexture(defaultErrorResource[(uint32)RESOURCE_TEXTURE]).setRepeated(true);
@@ -20,6 +20,20 @@ ResourceManager& ResourceManager::instance()
     return *instance;
 }
 
+ResourceManager::~ResourceManager()
+{
+    for (map<string, resource_info>::iterator it=resource_info_map.begin(); it!=resource_info_map.end(); it++)
+    {
+        switch(it->second.type)
+        {
+            case RESOURCE_TEXTURE:
+            {
+                getTexture(it->second.handle) = sf::Texture();
+            }break;
+        };
+    }
+}
+
 resource_memory_location ResourceManager::getNewMemoryLocation(uint32 size)
 {
     assert(resource_memory_list.back().size > size);
@@ -29,7 +43,7 @@ resource_memory_location ResourceManager::getNewMemoryLocation(uint32 size)
 
     if(memoryLeft < size)
     {
-        resource_memory_list.push_back(resource_memory_bucket());
+        resource_memory_list.resize(resource_memory_list.size()+1);
     }
 
     location.ptr = resource_memory_list.back().data + resource_memory_list.back().used;
@@ -37,6 +51,30 @@ resource_memory_location ResourceManager::getNewMemoryLocation(uint32 size)
 
     resource_memory_list.back().used+=size;
     return location;
+}
+
+
+void ResourceManager::loadFromFile(Resource_Type type, resource_memory_location location, string name)
+{
+    switch (type)
+    {
+        case RESOURCE_TEXTURE:
+        {
+            *((sf::Texture*)location.ptr) = sf::Texture();
+            if(!((sf::Texture*)location.ptr)->loadFromFile(name))
+            {
+                location.ptr = get(defaultErrorResource[(uint32)RESOURCE_TEXTURE]);
+            }
+        }break;
+    }
+}
+
+void ResourceManager::reloadAll()
+{
+    for (map<string, resource_info>::iterator it=resource_info_map.begin(); it!=resource_info_map.end(); it++)
+    {
+        loadFromFile(it->second.type, resource_memory_map[it->second.handle.id], it->first);
+    }
 }
 
 resource_handle ResourceManager::create(Resource_Type type, string name)
@@ -52,11 +90,7 @@ resource_handle ResourceManager::create(Resource_Type type, string name)
         {
             info.size = sizeof(sf::Texture);
             location = getNewMemoryLocation(info.size);
-            location.ptr = (byte*)(new sf::Texture);
-            if(!((sf::Texture*)location.ptr)->loadFromFile(name))
-            {
-                location.ptr = get(defaultErrorResource[(uint32)RESOURCE_TEXTURE]);
-            }
+            loadFromFile(type, location, name);
         }break;
     }
 

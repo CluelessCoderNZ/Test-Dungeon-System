@@ -10,6 +10,7 @@ Tileset loadTilesetFromFile(string filename, sf::Vector2u tileSize)
     output.tileCount = (tilesetImage.getSize().x / tileSize.x) * (tilesetImage.getSize().y / tileSize.y) + 1;
 
     output.tile.resize(output.tileCount);
+
     // Unlisted Blank Tile
     output.tile[0].name         = "Air";
     output.tile[0].isSolid      = false;
@@ -23,6 +24,7 @@ Tileset loadTilesetFromFile(string filename, sf::Vector2u tileSize)
         output.tile[i].sprite.setTexture(ResourceManager::instance().getTexture(output.tile[i].texture));
         output.tile[i].sprite.setTextureRect(sf::IntRect(((i-1) % tilesPerRow)*tileSize.x, ((i-1) / tilesPerRow)*tileSize.y, tileSize.x, tileSize.y));
         output.tile[i].sprite.setOrigin(0, 12);
+        output.tile[i].sprite.setColor(sf::Color::White);
     }
 
     return output;

@@ -1511,7 +1511,7 @@ void generateMapAO(GameMap &map, Tileset &tileset)
 void generateTilesetAOSprites(Tileset& tileset, sf::Vector2u size, real32 shadowLength, sf::Color shadowMaxColour, sf::Color shadowMinColour)
 {
     sf::Vector2f origin = sf::Vector2f(0,0);
-    sf::Vector2f dist   = sf::Vector2f(shadowLength, shadowLength);
+    sf::Vector2f dist   = sf::Vector2f(shadowLength, shadowLength*0.625);
 
     tileset.AO_Sprites.clear();
     tileset.AO_Sprites.resize(8);

@@ -419,7 +419,7 @@ struct DebugStateInformation
     real32   free_camera_normalspeed = 12;
     real32   free_camera_fastspeed = 25;
     real32   free_camera_zoom_normalspeed = 0.05;
-    real32   free_camera_zoom_fastspeed   = 0.12;
+    real32   free_camera_zoom_fastspeed   = 0.1;
     real32   free_camera_max_zoom = 20;
     real32   free_camera_min_zoom = 0.1;
 
