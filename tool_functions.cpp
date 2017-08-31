@@ -2,6 +2,138 @@
 #define TOOL_FUNCTIONS_CPP
 #include "tool_functions.h"
 
+
+template<typename Out>
+void split(const std::string &s, char delim, Out result) {
+    std::stringstream ss;
+    ss.str(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        *(result++) = item;
+    }
+}
+
+
+std::vector<std::string> split(const std::string &s, char delim) {
+    std::vector<std::string> elems;
+    split(s, delim, std::back_inserter(elems));
+    return elems;
+}
+
+string numToStr(real32 value, int32 sf)
+{
+    stringstream iss;
+    if(sf > 0)
+    {
+        iss << fixed << setprecision(sf) << value;
+    }else{
+        iss << value;
+    }
+    return iss.str();
+}
+
+string numToStr(int32 value)
+{
+    stringstream iss;
+    iss << value;
+    return iss.str();
+}
+
+string numToStr(int64 value)
+{
+    stringstream iss;
+    iss << value;
+    return iss.str();
+}
+
+string numToStr(uint32 value)
+{
+    stringstream iss;
+    iss << value;
+    return iss.str();
+}
+
+string numToStr(uint64 value)
+{
+    stringstream iss;
+    iss << value;
+    return iss.str();
+}
+
+string binaryToStr(byte value)
+{
+    bitset<8> b(value);
+    return b.to_string();
+}
+
+string variableToStr(sf::Vector2u value)
+{
+    return "("+numToStr((int32)value.x)+", "+numToStr((int32)value.y)+")";
+}
+
+string variableToStr(sf::Vector2f value)
+{
+    return "("+numToStr((real32)value.x, 2)+", "+numToStr((real32)value.y, 2)+")";
+}
+
+string variableToStr(sf::Vector2i value)
+{
+    return "("+numToStr((int32)value.x)+", "+numToStr((int32)value.y)+")";
+}
+
+string variableToStr(sf::IntRect value)
+{
+    return "("+numToStr((int32)value.top)+", "+numToStr((int32)value.left)+", "+numToStr((int32)value.width)+", "+numToStr((int32)value.height)+")";
+}
+
+string variableToStr(sf::FloatRect value)
+{
+    return "("+numToStr((real32)value.top)+", "+numToStr((real32)value.left)+", "+numToStr((real32)value.width)+", "+numToStr((real32)value.height)+")";
+}
+
+string variableToStr(sf::Color value)
+{
+    return "rgb("+numToStr((int32)value.r)+", "+numToStr((int32)value.g)+", "+numToStr((int32)value.b)+")";
+}
+
+string variableToStr(uint32 value)
+{
+    return numToStr((int32)value);
+}
+
+string variableToStr(real32 value)
+{
+    return numToStr(value);
+}
+
+string variableToStr(int32 value)
+{
+    return numToStr(value);
+}
+
+string variableToStr(int64 value)
+{
+    return numToStr(value);
+}
+
+string variableToStr(uint64 value)
+{
+    return numToStr(value);
+}
+
+string variableToStr(bool value)
+{
+    return value ? "True" : "False";
+}
+
+bool isNumber(const std::string& s)
+{
+    std::string::const_iterator it = s.begin();
+    while (it != s.end() && std::isdigit(*it)) ++it;
+    return !s.empty() && it == s.end();
+}
+
+
 string fastReadFile(string filename)
 {
 	ifstream file;
@@ -45,6 +177,157 @@ Json::Value readJsonFile(string filename)
 
 	// Return Output
 	return output;
+}
+
+bool loadLinearJsonIntoMemory(Json::Value &root, byte* dest, string format, bool haltIfMemberDoesNotExist)
+{
+	vector<string> data_format = split(format, ';');
+	const string data_token   	= "%";
+	const string token_string 	= "s";
+	const string token_bool		= "b";
+	const string token_int		= "i";
+	const string token_uint		= "u";
+	const string token_int64	= "I";
+	const string token_uint64	= "U";
+	const string token_float	= "f";
+	const string token_double	= "d";
+
+	const string token_byteSkip	= "x";
+
+	uint32 byte_offset = 0;
+
+	for(uint32 i = 0; i < data_format.size(); i++)
+	{
+		size_t data_split = data_format[i].find_first_of(data_token);
+
+		if(data_split != string::npos)
+		{
+			string type_string = data_format[i].substr(0, data_split);
+			string name_string  = data_format[i].substr(data_split+data_token.length());
+
+			if(root.isMember(name_string))
+			{
+				if(type_string==token_string)
+				{
+					if(root[name_string].isString())
+					{
+						string data = root[name_string].asString();
+						*((string*)(dest+byte_offset)) = data;
+					}else if(haltIfMemberDoesNotExist)
+					{
+						cout << "Error: Member '" << name_string << "' is not type 'String' in the Json::Value" << endl;
+						return false;
+					}
+					byte_offset += sizeof(string);
+				}else if(type_string==token_bool)
+				{
+					if(root[name_string].isBool() || root[name_string].isConvertibleTo(Json::booleanValue))
+					{
+						bool data = root[name_string].asBool();
+						*((bool*)(dest+byte_offset)) = data;
+					}else if(haltIfMemberDoesNotExist)
+					{
+						cout << "Error: Member '" << name_string << "' is not type 'Boolean' in the Json::Value" << endl;
+						return false;
+					}
+					byte_offset += sizeof(bool);
+				}else if(type_string==token_double)
+				{
+					if(root[name_string].isDouble() || root[name_string].isConvertibleTo(Json::realValue))
+					{
+						real64 data = root[name_string].asDouble();
+						*((real64*)(dest+byte_offset)) = data;
+					}else if(haltIfMemberDoesNotExist)
+					{
+						cout << "Error: Member '" << name_string << "' is not type 'Double' in the Json::Value" << endl;
+						return false;
+					}
+					byte_offset += sizeof(real64);
+				}else if(type_string==token_float)
+				{
+					if(root[name_string].isDouble() || root[name_string].isConvertibleTo(Json::realValue))
+					{
+						real32 data = root[name_string].asFloat();
+						*((real32*)(dest+byte_offset)) = data;
+					}else if(haltIfMemberDoesNotExist)
+					{
+						cout << "Error: Member '" << name_string << "' is not type 'Float' in the Json::Value" << endl;
+						return false;
+					}
+					byte_offset += sizeof(real32);
+				}else if(type_string==token_int)
+				{
+					if(root[name_string].isInt() || root[name_string].isConvertibleTo(Json::intValue))
+					{
+						int32 data = root[name_string].asInt();
+						*((int32*)(dest+byte_offset)) = data;
+					}else if(haltIfMemberDoesNotExist)
+					{
+						cout << "Error: Member '" << name_string << "' is not type 'Int32' in the Json::Value" << endl;
+						return false;
+					}
+					byte_offset += sizeof(int32);
+				}else if(type_string==token_int64)
+				{
+					if(root[name_string].isInt64() || root[name_string].isConvertibleTo(Json::intValue))
+					{
+						int64 data = root[name_string].asInt64();
+						*((int64*)(dest+byte_offset)) = data;
+					}else if(haltIfMemberDoesNotExist)
+					{
+						cout << "Error: Member '" << name_string << "' is not type 'Int64' in the Json::Value" << endl;
+						return false;
+					}
+					byte_offset += sizeof(int64);
+				}else if(type_string==token_uint)
+				{
+					if(root[name_string].isUInt() || root[name_string].isConvertibleTo(Json::uintValue))
+					{
+						uint32 data = root[name_string].asUInt();
+						*((uint32*)(dest+byte_offset)) = data;
+					}else if(haltIfMemberDoesNotExist)
+					{
+						cout << "Error: Member '" << name_string << "' is not type 'UInt32' in the Json::Value" << endl;
+						return false;
+					}
+					byte_offset += sizeof(uint32);
+				}else if(type_string==token_uint64)
+				{
+					if(root[name_string].isUInt64() || root[name_string].isConvertibleTo(Json::uintValue))
+					{
+						uint64 data = root[name_string].asUInt64();
+						*((uint64*)(dest+byte_offset)) = data;
+					}else if(haltIfMemberDoesNotExist)
+					{
+						cout << "Error: Member '" << name_string << "' is not type 'UInt64' in the Json::Value" << endl;
+						return false;
+					}
+					byte_offset += sizeof(uint64);
+				}else if(token_string==token_byteSkip)
+				{
+					if(isNumber(name_string))
+					{
+						byte_offset += str2uint(name_string);
+					}else{
+						cout << "Error: Byteskip failed because '" << name_string << "' is not a number" << endl;
+						return false;
+					}
+				}
+
+			}else if(haltIfMemberDoesNotExist)
+			{
+				cout << "Error: Member '" << name_string << "' does not exist in the Json::Value" << endl;
+				return false;
+			}
+
+		}else{
+			// TODO(Connor): Logging
+			cout << "Error: While loading json into memory, data format member '" << data_format[i] << "' missing data token '" << data_token << "'" << endl;
+			return false;
+		}
+	}
+
+	return true;
 }
 
 uint32 str2uint(string a)

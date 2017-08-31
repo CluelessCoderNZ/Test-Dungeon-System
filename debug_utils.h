@@ -263,12 +263,13 @@ struct DebugMenuNode
     {
         bool  isSubMenuOpen;                              // SUBMENU
         bool* bool_pointer;                               // ITEM_BOOL
-        void (*function_pointer)(DebugStateInformation&); // FUNCTION
+        void (*function_pointer)(DebugStateInformation&, DebugMenuNode*); // FUNCTION
     };
     DebugProfilerUiData ui_profiler;                  // PROFILER
     DebugItemListData option_list;                        // ITEM_LIST
 
     vector<DebugMenuNode*> children;
+    DebugMenuNode*         parent=nullptr;
 
     void draw(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, sf::Text &text, sf::Vector2f &position, uint32 indent);
     DebugMenuNode(){}
@@ -301,7 +302,7 @@ struct DebugMenuNode
         option_list.selected_id = update_ptr;
     }
 
-    DebugMenuNode(string name, void (*func_ptr)(DebugStateInformation&))
+    DebugMenuNode(string name, void (*func_ptr)(DebugStateInformation&, DebugMenuNode*))
     {
         display_name     = name;
         type             = DEBUG_UI_NODE_FUNCTION;
@@ -355,6 +356,9 @@ struct debug_ui_tooltip
 
 struct DebugMenuUIState
 {
+    stack<DebugMenuNode*> node_stack;
+    DebugMenuNode*        lastNodeAdded;
+
     DebugMenuNode rootNode = DebugMenuNode("Debug Menu");
     vector<FreeRoamingDebugMenuNode> freeRoamingNodeList;
     vector<debug_ui_tooltip>         tooltipList;
@@ -362,7 +366,32 @@ struct DebugMenuUIState
     uint32  indent=25;
     uint32  textSize = 20;
 
+
+    DebugMenuUIState()
+    {
+        node_stack.push(&rootNode);
+        lastNodeAdded = &rootNode;
+    }
+
     sf::Vector2f draw(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, sf::Font &font);
+
+    void addNode(DebugMenuNode* node, uint32 pop_back=0)
+    {
+        node->parent = node_stack.top();
+        node_stack.top()->children.push_back(node);
+        lastNodeAdded = node;
+
+        if(pop_back > 0)
+        {
+            for(uint32 i = 0; i < pop_back && node_stack.size() > 1; i++)
+            {
+                node_stack.pop();
+            }
+        }else if(node->type==DEBUG_UI_NODE_SUBMENU)
+        {
+            node_stack.push(node);
+    }
+    }
 };
 
 struct debug_frame_record
@@ -379,6 +408,12 @@ struct DebugStateInformation
     sf::Font font;
     sf::RenderTexture frameGraphTexture;
     string   additionalInfo;
+
+    GameState *gamestate=nullptr;
+
+    // Trigger Flag
+    bool           trigger_reloadItemList=false;
+    DebugMenuNode* node_itemList;
 
     // Camera Data
     real32   free_camera_normalspeed = 12;
@@ -429,21 +464,6 @@ struct DebugStateInformation
     sf::Color colour_roomConnectionHighlight    = sf::Color(0,0,255);
     sf::Color colour_roomDifficulty             = sf::Color::Red;
 };
-
-string numToStr(real32 value, int32 sf = -1);
-string numToStr(int32 value);
-string binaryToStr(byte value);
-
-string variableToStr(sf::Vector2u  value);
-string variableToStr(sf::Vector2f  value);
-string variableToStr(sf::Vector2i  value);
-string variableToStr(sf::IntRect   value);
-string variableToStr(sf::FloatRect value);
-string variableToStr(sf::Color     value);
-string variableToStr(uint32        value);
-string variableToStr(real32        value);
-string variableToStr(int32         value);
-string variableToStr(bool          value);
 
 void initDebugState(DebugStateInformation &debug);
 void updateDebugMemoryAnalyzer(DebugStateInformation &debug, GameMap &map, InputState &input);

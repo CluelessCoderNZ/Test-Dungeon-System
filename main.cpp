@@ -21,6 +21,8 @@ int main(int argc, char* argv[])
 
     gamestate.entity_controller.entity_storage.addChunk();
 
+    loadItemListFromConfigFile(gamestate.item_manager, "Resources/Config/item_list.json");
+
     InputState input;
     Keybind    keybind;
     keybind.setKey(INPUT_UP,    sf::Keyboard::W);
@@ -42,7 +44,7 @@ int main(int argc, char* argv[])
 
     mt19937 random_engine(startingSeed);
 
-    gamestate.current_map       = generateRandomGenericDungeonUsingMapFlow(random_engine, "Resources/World_Data/Room_Types/room_data.json");
+    gamestate.current_map       = generateRandomGenericDungeonUsingMapFlow(random_engine, "Resources/Config/World_Data/Room_Types/room_data.json");
     gamestate.player            = createPlayerEntity(gamestate.current_map, gamestate.entity_controller, Entity_Component_Position(sf::Vector2f(5,5), 0));
 
     gamestate.camera_fixedView  = scaleRect(getRoomGroupBounds(gamestate.current_map, gamestate.current_map.room[((Entity_Component_Position*)getEntityComponent(gamestate.entity_controller, gamestate.player, EC_POSITION))->room].room_group), sf::Vector2f(gamestate.current_map.tileSize.x, gamestate.current_map.tileSize.y));

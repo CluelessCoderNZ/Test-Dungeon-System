@@ -19,6 +19,7 @@
 #include "debug_utils.cpp"
 #include "game_timer.h"
 #include "game_timer.cpp"
+#include "game_item.cpp"
 
 using namespace std;
 
@@ -37,6 +38,7 @@ struct GameState
     Entity_State_Controller entity_controller;
     GameMap                 current_map;
     Tileset                 tileset;
+    ItemManager             item_manager; 
 
     uint32                  activeSimRoom=0;
 

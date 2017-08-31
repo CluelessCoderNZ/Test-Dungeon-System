@@ -6,112 +6,6 @@
 
 using namespace std;
 
-string numToStr(real32 value, int32 sf)
-{
-    stringstream iss;
-    if(sf > 0)
-    {
-        iss << fixed << setprecision(sf) << value;
-    }else{
-        iss << value;
-    }
-    return iss.str();
-}
-
-string numToStr(int32 value)
-{
-    stringstream iss;
-    iss << value;
-    return iss.str();
-}
-
-string numToStr(int64 value)
-{
-    stringstream iss;
-    iss << value;
-    return iss.str();
-}
-
-string numToStr(uint32 value)
-{
-    stringstream iss;
-    iss << value;
-    return iss.str();
-}
-
-string numToStr(uint64 value)
-{
-    stringstream iss;
-    iss << value;
-    return iss.str();
-}
-
-string binaryToStr(byte value)
-{
-    bitset<8> b(value);
-    return b.to_string();
-}
-
-string variableToStr(sf::Vector2u value)
-{
-    return "("+numToStr((int32)value.x)+", "+numToStr((int32)value.y)+")";
-}
-
-string variableToStr(sf::Vector2f value)
-{
-    return "("+numToStr((real32)value.x, 2)+", "+numToStr((real32)value.y, 2)+")";
-}
-
-string variableToStr(sf::Vector2i value)
-{
-    return "("+numToStr((int32)value.x)+", "+numToStr((int32)value.y)+")";
-}
-
-string variableToStr(sf::IntRect value)
-{
-    return "("+numToStr((int32)value.top)+", "+numToStr((int32)value.left)+", "+numToStr((int32)value.width)+", "+numToStr((int32)value.height)+")";
-}
-
-string variableToStr(sf::FloatRect value)
-{
-    return "("+numToStr((real32)value.top)+", "+numToStr((real32)value.left)+", "+numToStr((real32)value.width)+", "+numToStr((real32)value.height)+")";
-}
-
-string variableToStr(sf::Color value)
-{
-    return "rgb("+numToStr((int32)value.r)+", "+numToStr((int32)value.g)+", "+numToStr((int32)value.b)+")";
-}
-
-string variableToStr(uint32 value)
-{
-    return numToStr((int32)value);
-}
-
-string variableToStr(real32 value)
-{
-    return numToStr(value);
-}
-
-string variableToStr(int32 value)
-{
-    return numToStr(value);
-}
-
-string variableToStr(int64 value)
-{
-    return numToStr(value);
-}
-
-string variableToStr(uint64 value)
-{
-    return numToStr(value);
-}
-
-string variableToStr(bool value)
-{
-    return value ? "True" : "False";
-}
-
 void copyDebugMenuNode(DebugMenuNode *src, DebugMenuNode *dest)
 {
     *dest = *src;
@@ -124,7 +18,7 @@ void copyDebugMenuNode(DebugMenuNode *src, DebugMenuNode *dest)
     }
 }
 
-void clearDebugRoamingMenuNodeList(DebugStateInformation &debug)
+void clearDebugRoamingMenuNodeList(DebugStateInformation &debug, DebugMenuNode *node)
 {
     for(uint32 i = 0; i < debug.ui.freeRoamingNodeList.size(); i++)
     {
@@ -133,41 +27,54 @@ void clearDebugRoamingMenuNodeList(DebugStateInformation &debug)
     debug.ui.freeRoamingNodeList.clear();
 }
 
+void reloadDebugItemList(DebugStateInformation &debug, DebugMenuNode *node)
+{
+    debug.trigger_reloadItemList=true;
+}
+
 void initDebugState(DebugStateInformation &debug)
 {
     debug.font.loadFromFile("Resources/Fonts/Debug.woff");
     debug.frameGraphTexture.create(debug.kDebugRecordSnapshotSize, 100);
 
     // Initalize UI State
-    debug.ui.rootNode.children.push_back(new DebugMenuNode("Map"));
-        debug.ui.rootNode.children[0]->children.push_back(new DebugMenuNode("Room"));
-            debug.ui.rootNode.children[0]->children[0]->children.push_back(new DebugMenuNode("Display_TileID", &debug.display_TileID));
-            debug.ui.rootNode.children[0]->children[0]->children.push_back(new DebugMenuNode("Display_TileAO", &debug.display_TileAO));
-        debug.ui.rootNode.children[0]->children.push_back(new DebugMenuNode("Display_RoomBoundaries", &debug.display_RoomBoundaries));
-        debug.ui.rootNode.children[0]->children.push_back(new DebugMenuNode("Display_RoomGraph", &debug.display_RoomGraph));
-        debug.ui.rootNode.children[0]->children.push_back(new DebugMenuNode("Display_TileGrid", &debug.display_TileGrid));
-        debug.ui.rootNode.children[0]->children.push_back(new DebugMenuNode("Display_RoomID", &debug.display_RoomID));
-        debug.ui.rootNode.children[0]->children.push_back(new DebugMenuNode("Display_RoomConnections", &debug.display_RoomConnections));
+    debug.ui.addNode(new DebugMenuNode("Map"));
+        debug.ui.addNode(new DebugMenuNode("Render"));
+            debug.ui.addNode(new DebugMenuNode("Display_RoomBoundaries", &debug.display_RoomBoundaries));
+            debug.ui.addNode(new DebugMenuNode("Display_RoomGraph", &debug.display_RoomGraph));
+            debug.ui.addNode(new DebugMenuNode("Display_TileGrid", &debug.display_TileGrid));
+            debug.ui.addNode(new DebugMenuNode("Display_RoomID", &debug.display_RoomID));
+            debug.ui.addNode(new DebugMenuNode("Display_RoomConnections", &debug.display_RoomConnections), 1);
+        debug.ui.addNode(new DebugMenuNode("Room"));
+            debug.ui.addNode(new DebugMenuNode("Display_TileID", &debug.display_TileID));
+            debug.ui.addNode(new DebugMenuNode("Display_TileAO", &debug.display_TileAO), 2);
 
-    debug.ui.rootNode.children.push_back(new DebugMenuNode("Entity"));
-        debug.ui.rootNode.children[1]->children.push_back(new DebugMenuNode("Entity Factory"));
-            debug.ui.rootNode.children[1]->children[0]->children.push_back(new DebugMenuNode("Type", {}, &debug.user_clickToPlaceEntity_id));
+    debug.ui.addNode(new DebugMenuNode("Entity"));
+        debug.ui.addNode(new DebugMenuNode("OpenEntityCache", &debug.memoryAnalyzer.isEnabled));
+        debug.ui.addNode(new DebugMenuNode("Display_SelectedEntity", &debug.display_memorySelectedEntity));
+        debug.ui.addNode(new DebugMenuNode("Follow_SelectedEntity", &debug.follow_memorySelectedEntity));
+        debug.ui.addNode(new DebugMenuNode("Entity Factory"));
+            debug.ui.addNode(new DebugMenuNode("Type", {}, &debug.user_clickToPlaceEntity_id));
             for(uint32 i = 0; i < kEntityTypeCount; i++)
             {
-                debug.ui.rootNode.children[1]->children[0]->children[0]->option_list.option.push_back(kEntityTypeString[i]);
+                debug.ui.lastNodeAdded->option_list.option.push_back(kEntityTypeString[i]);
             }
-            debug.ui.rootNode.children[1]->children[0]->children.push_back(new DebugMenuNode("Click To Add", &debug.user_clickToPlaceEntity));
-        debug.ui.rootNode.children[1]->children.push_back(new DebugMenuNode("Display_SelectedEntity", &debug.display_memorySelectedEntity));
-        debug.ui.rootNode.children[1]->children.push_back(new DebugMenuNode("Follow_SelectedEntity", &debug.follow_memorySelectedEntity));
-        debug.ui.rootNode.children[1]->children.push_back(new DebugMenuNode("OpenEntityCache", &debug.memoryAnalyzer.isEnabled));
+            debug.ui.addNode(new DebugMenuNode("Click To Add", &debug.user_clickToPlaceEntity), 2);
 
-    debug.ui.rootNode.children.push_back(new DebugMenuNode("System"));
-        debug.ui.rootNode.children[2]->children.push_back(new DebugMenuNode("Profiler"));
-            debug.ui.rootNode.children[2]->children[0]->children.push_back(new DebugMenuNode("Paused", &debug.simulation_paused));
-            debug.ui.rootNode.children[2]->children[0]->children.push_back(new DebugMenuNode(DEBUG_UI_NODE_PROFILER));
-        debug.ui.rootNode.children[2]->children.push_back(new DebugMenuNode("Display_FPS", &debug.display_FPS));
-    debug.ui.rootNode.children.push_back(new DebugMenuNode("UI"));
-        debug.ui.rootNode.children[3]->children.push_back(new DebugMenuNode("ClearDebugNodes", &clearDebugRoamingMenuNodeList));
+    debug.ui.addNode(new DebugMenuNode("System"));
+        debug.ui.addNode(new DebugMenuNode("Display_FPS", &debug.display_FPS));
+        debug.ui.addNode(new DebugMenuNode("Profiler"));
+            debug.ui.addNode(new DebugMenuNode("Paused", &debug.simulation_paused));
+            debug.ui.addNode(new DebugMenuNode(DEBUG_UI_NODE_PROFILER), 2);
+
+    debug.ui.addNode(new DebugMenuNode("UI"));
+        debug.ui.addNode(new DebugMenuNode("ClearDebugNodes", &clearDebugRoamingMenuNodeList), 1);
+
+    static uint32 item_index=0;
+    debug.ui.addNode(new DebugMenuNode("Items"));
+        debug.ui.addNode(new DebugMenuNode("ReloadItemFile", &reloadDebugItemList));
+        debug.ui.addNode(new DebugMenuNode("Item", {}, &item_index), 1);
+        debug.node_itemList = debug.ui.lastNodeAdded;
 }
 
 void updateDebugMemoryAnalyzer(DebugStateInformation &debug, GameMap &map, InputState &input)
@@ -555,7 +462,7 @@ void draw_DebugMenuNodeItemFunction(sf::RenderWindow &window, InputState &input,
                 debug.ui.freeRoamingNodeList.push_back(FreeRoamingDebugMenuNode());
                 copyDebugMenuNode(node, debug.ui.freeRoamingNodeList[debug.ui.freeRoamingNodeList.size()-1].node);
             }else{
-                node->function_pointer(debug);
+                node->function_pointer(debug, node);
             }
         }else{
             text.setFillColor(node->textHighlightColour);
@@ -573,7 +480,9 @@ void draw_DebugMenuNodeItemList(sf::RenderWindow &window, InputState &input, Deb
 {
     assert(node->option_list.selected_id!=nullptr);
     real32 height=0;
-    string textStr = node->display_name+": "+node->option_list.option[*node->option_list.selected_id];
+    string textStr = node->display_name+": ";
+    if(*node->option_list.selected_id < node->option_list.option.size())
+        textStr+=node->option_list.option[*node->option_list.selected_id];
 
     text.setPosition(position);
     text.setString(textStr);
@@ -591,10 +500,13 @@ void draw_DebugMenuNodeItemList(sf::RenderWindow &window, InputState &input, Deb
     text.setString(textStr);
     window.draw(text);
 
-    text.move(text.getGlobalBounds().width, 0);
-    text.setFillColor(node->option_list.selectedColour);
-    text.setString(node->option_list.option[*node->option_list.selected_id]);
-    window.draw(text);
+    if(*node->option_list.selected_id < node->option_list.option.size())
+    {
+        text.move(text.getGlobalBounds().width, 0);
+        text.setFillColor(node->option_list.selectedColour);
+        text.setString(node->option_list.option[*node->option_list.selected_id]);
+        window.draw(text);
+    }
     height+=node->margin + text.getGlobalBounds().height;
 
     // Mouse Input

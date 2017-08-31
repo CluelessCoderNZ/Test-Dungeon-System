@@ -4,17 +4,19 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include "game_consts.h"
+#include "resource_manager.h"
+#include "resource_manager.cpp"
 
 using namespace std;
 
 struct Tile_Template
 {
-    string      name        = "NULL";
-    b32         isSolid     = false;
-    b32         isFloor     = true;
-    b32         isVisible   = true;
-    sf::Texture texture;
-    sf::Sprite  sprite;
+    string          name        = "NULL";
+    b32             isSolid     = false;
+    b32             isFloor     = true;
+    b32             isVisible   = true;
+    resource_handle texture;
+    sf::Sprite      sprite;
 };
 
 struct Tileset

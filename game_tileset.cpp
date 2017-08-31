@@ -16,10 +16,12 @@ Tileset loadTilesetFromFile(string filename, sf::Vector2u tileSize)
     output.tile[0].isVisible    = false;
 
     uint32 tilesPerRow = tilesetImage.getSize().x / tileSize.x;
+    resource_handle tileset_texture = ResourceManager::instance().load(RESOURCE_TEXTURE, filename);
     for(uint32 i = 1; i < output.tileCount; i++)
     {
-        output.tile[i].texture.loadFromImage(tilesetImage, sf::IntRect(((i-1) % tilesPerRow)*tileSize.x, ((i-1) / tilesPerRow)*tileSize.y, tileSize.x, tileSize.y));
-        output.tile[i].sprite.setTexture(output.tile[i].texture);
+        output.tile[i].texture = tileset_texture;
+        output.tile[i].sprite.setTexture(ResourceManager::instance().getTexture(output.tile[i].texture));
+        output.tile[i].sprite.setTextureRect(sf::IntRect(((i-1) % tilesPerRow)*tileSize.x, ((i-1) / tilesPerRow)*tileSize.y, tileSize.x, tileSize.y));
         output.tile[i].sprite.setOrigin(0, 12);
     }
 

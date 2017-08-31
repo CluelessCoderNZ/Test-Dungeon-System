@@ -68,7 +68,7 @@ void RenderWholeMap(Entity_State_Controller &controller, GameState &state)
                     MapTile tile = state.current_map.room[room_index].getTile(x, y);
                     if(state.tileset.tile[tile.tileID].isVisible && state.tileset.tile[tile.tileID].isFloor)
                     {
-                        state.tileset.tile[tile.tileID].sprite.setPosition((real32)state.current_map.tileSize.x * (real32)(x+state.current_map.room[room_index].bounds.left), (real32)state.current_map.tileSize.y * (real32)(y+state.current_map.room[room_index].bounds.top));
+                        state.tileset.tile[tile.tileID].sprite.setPosition((int32)((int32)state.current_map.tileSize.x * (int32)(x+state.current_map.room[room_index].bounds.left)), (int32)((int32)state.current_map.tileSize.y * (int32)(y+state.current_map.room[room_index].bounds.top)));
                         state.window.draw(state.tileset.tile[tile.tileID].sprite);
 
                         // Ambient Occlusion
@@ -99,7 +99,7 @@ void RenderWholeMap(Entity_State_Controller &controller, GameState &state)
                     MapTile tile = state.current_map.room[room_index].getTile(x, y);
                     if(state.tileset.tile[tile.tileID].isVisible && !state.tileset.tile[tile.tileID].isFloor)
                     {
-                        state.tileset.tile[tile.tileID].sprite.setPosition((real32)state.current_map.tileSize.x * (real32)(x+state.current_map.room[room_index].bounds.left), (real32)state.current_map.tileSize.y * (real32)(y+state.current_map.room[room_index].bounds.top));
+                        state.tileset.tile[tile.tileID].sprite.setPosition((int32)((int32)state.current_map.tileSize.x * (int32)(x+state.current_map.room[room_index].bounds.left)), (int32)((int32)state.current_map.tileSize.y * (int32)(y+state.current_map.room[room_index].bounds.top)));
                         state.window.draw(state.tileset.tile[tile.tileID].sprite);
                     }
                 }
@@ -254,6 +254,7 @@ void CleanUpGameState(GameState &state)
 void updateDebugState(GameState &state, InputState input)
 {
     TIMED_BLOCK(1);
+    state.debug.gamestate = &state;
 
     if(input.action(INPUT_SHIFT).isDown && input.action(INPUT_SPACE).state == BUTTON_PRESSED)
     {
@@ -282,6 +283,7 @@ void updateDebugState(GameState &state, InputState input)
     }
 
     state.pausedGameplay = state.debug.simulation_paused;
+
     // ------
     // UPDATE
     // ------
@@ -301,7 +303,7 @@ void updateDebugState(GameState &state, InputState input)
     if(input.action(INPUT_DEBUG_ACTION_1).state == BUTTON_RELEASED)
     {
         mt19937 random_engine(time(NULL)+debug_mapReloadIteration);
-        state.current_map = generateRandomGenericDungeonUsingMapFlow(random_engine, "Resources/World_Data/Room_Types/room_data.json");
+        state.current_map = generateRandomGenericDungeonUsingMapFlow(random_engine, "Resources/Config/World_Data/Room_Types/room_data.json");
         debug_mapReloadIteration++;
     }
 
@@ -329,6 +331,19 @@ void updateDebugState(GameState &state, InputState input)
                 }break;
                 case ENTITY_AI_DUMB: createDumbAIEntity(state.current_map, state.entity_controller, Entity_Component_Position(localTilePos,state.debug.mouse_hovered_room_id));break;
             }
+        }
+    }
+
+    if(state.debug.trigger_reloadItemList)
+    {
+        state.debug.trigger_reloadItemList=false;
+
+        loadItemListFromConfigFile(state.item_manager, "Resources/Config/item_list.json", true);
+        state.debug.node_itemList->option_list.option.clear();
+        for (map<uint32, game_item>::iterator it=state.item_manager.item_list.begin(); it!=state.item_manager.item_list.end(); it++)
+        {
+            state.debug.node_itemList->option_list.option.push_back(it->second.name);
+            state.debug.node_itemList->option_list.option.push_back("-> "+it->second.description);
         }
     }
 
