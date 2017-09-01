@@ -45,7 +45,7 @@ resource_memory_location ResourceManager::getNewMemoryLocation(uint32 size)
     {
         resource_memory_list.resize(resource_memory_list.size()+1);
     }
-
+    
     location.ptr = resource_memory_list.back().data + resource_memory_list.back().used;
     location.bucket_id = resource_memory_list.size()-1;
 
@@ -60,7 +60,8 @@ void ResourceManager::loadFromFile(Resource_Type type, resource_memory_location 
     {
         case RESOURCE_TEXTURE:
         {
-            *((sf::Texture*)location.ptr) = sf::Texture();
+            sf::Texture temp = sf::Texture();
+            memcpy(location.ptr, &temp, sizeof(temp));
             if(!((sf::Texture*)location.ptr)->loadFromFile(name))
             {
                 location.ptr = get(defaultErrorResource[(uint32)RESOURCE_TEXTURE]);

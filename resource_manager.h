@@ -1,6 +1,7 @@
 #ifndef RESOURCE_MANAGER_H
 #define RESOURCE_MANAGER_H
 #include "game_consts.h"
+#include <cstring>
 
 
 #define kResourceTypeCount 3
