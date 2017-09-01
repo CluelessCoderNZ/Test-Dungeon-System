@@ -16,6 +16,8 @@ void generateByteSizeDataOfComponents()
     kEntity_Component_StringName[3] = "Shape Data";
     kEntity_Component_ByteSize[4]   = sizeof(Entity_Component_Size);
     kEntity_Component_StringName[4] = "Bounds";
+    kEntity_Component_ByteSize[5]   = sizeof(Entity_Component_PlayerRender);
+    kEntity_Component_StringName[5] = "Player Render";
 }
 
 Entity getEntity(Entity_State_Controller &controller, Entity_Reference ref)
@@ -46,25 +48,42 @@ Entity_Reference allocateEntity(Entity_State_Controller &controller, uint32 glob
     // Initalize chunk with blank data
     char* pointer = controller.entity_storage.chunk[reference.chunkID].arena+reference.chunkOffset+sizeof(Entity);
 
+
     if(entity.component & (uint32)EC_POSITION)
     {
-        *(Entity_Component_Position*)pointer = Entity_Component_Position();
+        auto temp = Entity_Component_Position();
+        memcpy(pointer, &temp, kEntity_Component_ByteSize[0]);
         pointer+=kEntity_Component_ByteSize[0];
     }
     if(entity.component & (uint32)EC_VELOCITY)
     {
-        *(Entity_Component_Velocity*)pointer = Entity_Component_Velocity();
+        auto temp = Entity_Component_Velocity();
+        memcpy(pointer, &temp, kEntity_Component_ByteSize[1]);
         pointer+=kEntity_Component_ByteSize[1];
+    }
+    if(entity.component & (uint32)EC_SPEED)
+    {
+        auto temp = Entity_Component_Speed();
+        memcpy(pointer, &temp, kEntity_Component_ByteSize[2]);
+        pointer+=kEntity_Component_ByteSize[2];
     }
     if(entity.component & (uint32)EC_SHAPERENDER)
     {
-        *(Entity_Component_ShapeRender*)pointer = Entity_Component_ShapeRender();
-        pointer+=kEntity_Component_ByteSize[2];
+        auto temp = Entity_Component_ShapeRender();
+        memcpy(pointer, &temp, kEntity_Component_ByteSize[3]);
+        pointer+=kEntity_Component_ByteSize[3];
     }
     if(entity.component & (uint32)EC_SIZE_BOUNDS)
     {
-        *(Entity_Component_Size*)pointer = Entity_Component_Size();
-        pointer+=kEntity_Component_ByteSize[3];
+        auto temp = Entity_Component_Size();
+        memcpy(pointer, &temp, kEntity_Component_ByteSize[4]);
+        pointer+=kEntity_Component_ByteSize[4];
+    }
+    if(entity.component & (uint32)EC_PLAYERRENDER)
+    {
+        auto temp = Entity_Component_PlayerRender();
+        memcpy(pointer, &temp, kEntity_Component_ByteSize[5]);
+        pointer+=kEntity_Component_ByteSize[5];
     }
 
     return reference;
@@ -194,8 +213,19 @@ void Entity_System_KeyboardControl(Entity_State_Controller &controller, real32 t
     Entity entity = getEntity(controller, ref);
     if(HAS_COMPONENT(EC_VELOCITY) && HAS_COMPONENT(EC_POSITION))
     {
-        GET_EC_VELOCITY()->velocity.x *= 0.8 * t;
-        GET_EC_VELOCITY()->velocity.y *= 0.8 * t;
+        real32 signDirectionX = (GET_EC_VELOCITY()->velocity.x > 0) ? -1 : 1;
+        real32 signDirectionY = (GET_EC_VELOCITY()->velocity.y > 0) ? -1 : 1;
+
+        GET_EC_VELOCITY()->velocity.x += signDirectionX * (0.2 * abs(GET_EC_VELOCITY()->velocity.x) + 0.01) * t;
+        GET_EC_VELOCITY()->velocity.y += signDirectionY * (0.2 * abs(GET_EC_VELOCITY()->velocity.y) + 0.01) * t;
+
+        real32 new_signDirectionX  = (GET_EC_VELOCITY()->velocity.x > 0) ? -1 : 1;
+        real32 new_signDirectionY  = (GET_EC_VELOCITY()->velocity.y > 0) ? -1 : 1;
+
+        if(new_signDirectionX != signDirectionX)
+            GET_EC_VELOCITY()->velocity.x=0;
+        if(new_signDirectionY != signDirectionY)
+            GET_EC_VELOCITY()->velocity.y=0;
 
         if(input.action(INPUT_UP).isDown)
         {
@@ -288,6 +318,27 @@ void Entity_System_CollisionTilemap(Entity_State_Controller &controller, real32 
     }
 }
 
+void Entity_System_PlayerRender(Entity_State_Controller &controller, sf::RenderTarget *target, GameMap &map, Entity_Reference &ref, real32 t)
+{
+    if(HAS_COMPONENT(EC_PLAYERRENDER))
+    {
+        Entity_Component_PlayerRender *data = GET_EC_PLAYERRENDER();
+        data->sprite.setPosition(localRoomPositionToScreen(map, *GET_EC_POSITION()));
+        if(GET_EC_VELOCITY()->velocity == sf::Vector2f(0,0))
+        {
+            data->animation_walk_front.timer.restart();
+            data->animation_walk_front.animate(0, data->sprite);
+        }else if(GET_EC_VELOCITY()->velocity.y < 0)
+        {
+            data->animation_walk_back.animate(t, data->sprite);
+        }else
+        {
+            data->animation_walk_front.animate(t, data->sprite);
+        }
+        target->draw(data->sprite);
+    }
+}
+
 void Entity_System_BasicTestAI(Entity_State_Controller &controller, real32 t, Entity_Reference &ref)
 {
     real32 angle = atan2(((Entity_Component_Velocity*)getEntityComponent(controller, ref, EC_VELOCITY))->velocity.y,((Entity_Component_Velocity*)getEntityComponent(controller, ref, EC_VELOCITY))->velocity.x);
@@ -307,22 +358,15 @@ Entity_Reference createPlayerEntity(GameMap &map, Entity_State_Controller &contr
 {
     Entity entity;
     entity.id           = controller.current_entity++;
-    entity.component    = (uint32)EC_POSITION | (uint32)EC_VELOCITY | (uint32)EC_SPEED | (uint32)EC_SHAPERENDER | (uint32)EC_SIZE_BOUNDS;
-    entity.system       = (uint32)ES_PHYSICS_VELOCITY | (uint32)ES_KEYBOARD_CONTROL | (uint32)ES_CIRCLE_RENDER | (uint32)ES_COLLISIONTILEMAP;
+    entity.component    = (uint32)EC_POSITION | (uint32)EC_VELOCITY | (uint32)EC_SPEED | (uint32)EC_PLAYERRENDER | (uint32)EC_SIZE_BOUNDS;
+    entity.system       = (uint32)ES_PHYSICS_VELOCITY | (uint32)ES_KEYBOARD_CONTROL | (uint32)ES_PLAYER_RENDER | (uint32)ES_COLLISIONTILEMAP;
 
     Entity_Reference ref = allocateEntity(controller, entity.id, entity);
     map.room[position.room].entity_list.push_back(ref);
 
-    Entity_Component_ShapeRender shape;
-    shape.fillColour        = sf::Color::Red;
-    shape.outlineColour     = sf::Color::White;
-    shape.outlineThickness  = 4;
-    shape.size              = 32;
-
     *((Entity_Component_Position*)getEntityComponent(controller, ref, EC_POSITION))             = position;
     ((Entity_Component_Velocity*)getEntityComponent(controller, ref, EC_VELOCITY))->velocity    = sf::Vector2f(0,0);
-    ((Entity_Component_Speed*)getEntityComponent(controller, ref,    EC_SPEED))->speed          = 0.4;
-    *(Entity_Component_ShapeRender*)getEntityComponent(controller, ref, EC_SHAPERENDER)         = shape;
+    ((Entity_Component_Speed*)getEntityComponent(controller, ref,    EC_SPEED))->speed          = 0.05;
     ((Entity_Component_Size*)getEntityComponent(controller, ref, EC_SIZE_BOUNDS))->size         = sf::IntRect(-20, -10, 40, 10);
 
     return ref;
@@ -332,8 +376,8 @@ Entity_Reference createDumbAIEntity(GameMap &map, Entity_State_Controller &contr
 {
     Entity entity;
     entity.id           = controller.current_entity++;
-    entity.component    = (uint32)EC_POSITION | (uint32)EC_VELOCITY | (uint32)EC_SPEED | (uint32)EC_SHAPERENDER | (uint32)EC_SIZE_BOUNDS;
-    entity.system       = (uint32)ES_PHYSICS_VELOCITY | (uint32)ES_BASIC_TEST_AI | (uint32)ES_CIRCLE_RENDER | (uint32)ES_COLLISIONTILEMAP;
+    entity.component    = (uint32)EC_POSITION | (uint32)EC_VELOCITY | (uint32)EC_SPEED | (uint32)EC_PLAYERRENDER | (uint32)EC_SIZE_BOUNDS;
+    entity.system       = (uint32)ES_PHYSICS_VELOCITY | (uint32)ES_BASIC_TEST_AI | (uint32)ES_PLAYER_RENDER | (uint32)ES_COLLISIONTILEMAP;
 
     Entity_Reference ref = allocateEntity(controller, entity.id, entity);
     map.room[position.room].entity_list.push_back(ref);
@@ -347,7 +391,7 @@ Entity_Reference createDumbAIEntity(GameMap &map, Entity_State_Controller &contr
     *((Entity_Component_Position*)getEntityComponent(controller, ref, EC_POSITION))             = position;
     ((Entity_Component_Velocity*)getEntityComponent(controller, ref, EC_VELOCITY))->velocity    = sf::Vector2f(0,0);
     ((Entity_Component_Speed*)getEntityComponent(controller, ref,    EC_SPEED))->speed          = 0.3;
-    *(Entity_Component_ShapeRender*)getEntityComponent(controller, ref, EC_SHAPERENDER)         = shape;
+    // *(Entity_Component_ShapeRender*)getEntityComponent(controller, ref, EC_SHAPERENDER)         = shape;
     ((Entity_Component_Size*)getEntityComponent(controller, ref, EC_SIZE_BOUNDS))->size         = sf::IntRect(-9, -5, 18, 5);
 
     return ref;

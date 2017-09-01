@@ -57,8 +57,8 @@ struct GameState
 sf::Vector2f getLockedCameraCenterPosition(sf::FloatRect cameraLockBounds, sf::Vector2f targetCenter, sf::Vector2f cameraSize);
 
 void UpdateEntity(Entity_State_Controller &controller, GameState &state, InputState &input, Entity_Reference &ref, real32 t);
-void RenderEntity(Entity_State_Controller &controller, GameState &state, sf::FloatRect &viewport, Entity_Reference &ref);
-void RenderWholeMap(Entity_State_Controller &controller, GameState &state);
+void RenderEntity(Entity_State_Controller &controller, GameState &state, sf::FloatRect &viewport, Entity_Reference &ref, real32 t);
+void RenderWholeMap(Entity_State_Controller &controller, GameState &state, real32 t);
 void RenderByTargetRoom(Entity_State_Controller &controller, GameState &state);
 void GAME_UPDATE_AND_RENDER(GameState &state, InputState input, real32 t);
 void CleanUpGameState(GameState &state);

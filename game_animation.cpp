@@ -6,7 +6,7 @@ void Animation::animateTexture(resource_handle texture, real32 millisecondTime, 
 {
     type = Animation::ANIMATE_TEXTURE;
     frame_texture.texture = texture;
-    frame_texture.size = frame_size;
+    frame_texture.frame_size = frame_size;
 
     if(texture_area==sf::IntRect(0,0,0,0))
     {
@@ -24,7 +24,7 @@ void Animation::animateTexture(resource_handle texture, real32 millisecondTime, 
 
 void Animation::animateTexture(string filename, real32 millisecondTime, sf::Vector2u frame_size, sf::IntRect texture_area)
 {
-    animateTexture(ResourceManager::instance().load(filename), millisecondTime, frame_size, texture_area);
+    animateTexture(ResourceManager::instance().load(RESOURCE_TEXTURE, filename), millisecondTime, frame_size, texture_area);
 }
 
 void Animation::animateScale(sf::Vector2f start_value, sf::Vector2f end_value, real32 millisecondTime)
@@ -43,13 +43,13 @@ void Animation::animateColour(sf::Color start_value, sf::Color end_value, real32
     timer.restart(millisecondTime);
 }
 
-void Animation::animateSprite(real32 t, sf::Sprite &sprite)
+void Animation::animate(real32 t, sf::Sprite &sprite)
 {
     switch(type)
     {
         case Animation::ANIMATE_TEXTURE:
         {
-            if(sprite.getTexture() == &ResourceManager::instance().getTexture(frame_texture.texture))
+            if(sprite.getTexture() != &ResourceManager::instance().getTexture(frame_texture.texture))
             {
                 sprite.setTexture(ResourceManager::instance().getTexture(frame_texture.texture));
             }
@@ -66,10 +66,10 @@ void Animation::animateSprite(real32 t, sf::Sprite &sprite)
         {
             sprite.setScale(
                 interpolate(scale.start_value.x , scale.end_value.x, timer.getValue(t)),
-                interpolate(scale.start_value.y , scale.end_value.y, timer.getValue(t))
+                interpolate(scale.start_value.y , scale.end_value.y, timer.getValue(0))
             );
         }break;
-        case Animation::ANIMATE_TWEEN_SCALE:
+        case Animation::ANIMATE_TWEEN_COLOUR:
         {
             sprite.setColor(
                 interpolate(colour.start_value , colour.end_value, timer.getValue(t))

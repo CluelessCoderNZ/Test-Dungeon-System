@@ -8,6 +8,9 @@
 #include "game_map.h"
 #include "math_utils.h"
 #include "math_utils.cpp"
+#include "resource_manager.h"
+#include "resource_manager.cpp"
+#include "game_animation.cpp"
 
 using namespace std;
 
@@ -55,7 +58,7 @@ string kEntityTypeString[] =
 // where these effects are applied unwittingly. In contrast for something like position_velocity system it might be uneccessery as these
 // components in style are less likely to be removed from an entity
 
-#define ENTITY_COMPONENT_MAX_FLAGS 5
+#define ENTITY_COMPONENT_MAX_FLAGS 6
 enum Entity_Component_Flags
 {
     EC_NONE         = 0,
@@ -63,7 +66,8 @@ enum Entity_Component_Flags
     EC_VELOCITY     = 1 << 1,
     EC_SPEED        = 1 << 2,
     EC_SHAPERENDER  = 1 << 3,
-    EC_SIZE_BOUNDS  = 1 << 4
+    EC_SIZE_BOUNDS  = 1 << 4,
+    EC_PLAYERRENDER = 1 << 5
 };
 
 #define HAS_COMPONENT(x) (getEntity(controller, ref).component & (uint32)x)
@@ -72,6 +76,7 @@ enum Entity_Component_Flags
 #define GET_EC_SPEED() ((Entity_Component_Speed*)getEntityComponent(controller, ref, EC_SPEED))
 #define GET_EC_SHAPERENDER() ((Entity_Component_ShapeRender*)getEntityComponent(controller, ref, EC_SHAPERENDER))
 #define GET_EC_SIZE_BOUNDS() ((Entity_Component_Size*)getEntityComponent(controller, ref, EC_SIZE_BOUNDS))
+#define GET_EC_PLAYERRENDER() ((Entity_Component_PlayerRender*)getEntityComponent(controller, ref, EC_PLAYERRENDER))
 
 static uint32 kEntity_Component_ByteSize[ENTITY_COMPONENT_MAX_FLAGS];
 static string kEntity_Component_StringName[ENTITY_COMPONENT_MAX_FLAGS];
@@ -113,7 +118,24 @@ struct Entity_Component_Size
     sf::IntRect size;
 };
 
-#define ENTITY_SYSTEM_MAX_FLAGS 5
+struct Entity_Component_PlayerRender
+{
+    sf::Sprite sprite;
+    Animation  animation_walk_front;
+    Animation  animation_walk_back;
+
+    Entity_Component_PlayerRender()
+    {
+        animation_walk_front.animateTexture("Resources/Graphics/Entity/Character.png", 100, sf::Vector2u(32,32), sf::IntRect(0,0,192,32));
+        animation_walk_front.timer.setLoop(true);
+        animation_walk_back.animateTexture("Resources/Graphics/Entity/Character.png", 100, sf::Vector2u(32,32), sf::IntRect(0,32,192,32));
+        animation_walk_back.timer.setLoop(true);
+        sprite.setOrigin(16, 32);
+        sprite.setScale(0.5, 0.5);
+    }
+};
+
+#define ENTITY_SYSTEM_MAX_FLAGS 6
 enum Entity_System_Flags
 {
     ES_NONE                 = 0,
@@ -121,7 +143,8 @@ enum Entity_System_Flags
     ES_KEYBOARD_CONTROL     = 1 << 1,
     ES_CIRCLE_RENDER        = 1 << 2,
     ES_COLLISIONTILEMAP     = 1 << 3,
-    ES_BASIC_TEST_AI        = 1 << 4
+    ES_BASIC_TEST_AI        = 1 << 4,
+    ES_PLAYER_RENDER        = 1 << 5
 };
 
 struct Entity
@@ -198,6 +221,7 @@ void Entity_System_KeyboardControl(Entity_State_Controller &controller, real32 t
 void Entity_System_CircleRender(Entity_State_Controller &controller, sf::RenderTarget *target, GameMap &map, Entity_Reference &entity);
 void Entity_System_CollisionTilemap(Entity_State_Controller &controller, real32 t, GameMap &map, Tileset &tileset, Entity_Reference &entity);
 void Entity_System_BasicTestAI(Entity_State_Controller &controller, real32 t, Entity_Reference &entity);
+void Entity_System_PlayerRender(Entity_State_Controller &controller, sf::RenderTarget *target, GameMap &map, Entity_Reference &entity, real32 t);
 
 // Factory Functions
 Entity_Reference createPlayerEntity(GameMap &map, Entity_State_Controller &controller, Entity_Component_Position position);

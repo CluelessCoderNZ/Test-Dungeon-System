@@ -58,6 +58,7 @@ int main(int argc, char* argv[])
     initDebugState(gamestate.debug);
     gamestate.debug.memoryAnalyzer.controller = &gamestate.entity_controller;
 
+
     sf::Clock framerateTimer;
     sf::Time  frameTime;
     real32    frameSpeed=0.5;

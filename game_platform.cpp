@@ -26,7 +26,7 @@ void UpdateEntity(Entity_State_Controller &controller, GameState &state, InputSt
         ref.sort_key = ((Entity_Component_Position*)getEntityComponent(controller, ref, EC_POSITION))->position.y;
 }
 
-void RenderEntity(Entity_State_Controller &controller, GameState &state, sf::FloatRect &viewport, Entity_Reference &ref)
+void RenderEntity(Entity_State_Controller &controller, GameState &state, sf::FloatRect &viewport, Entity_Reference &ref, real32 t)
 {
     TIMED_BLOCK(1);
     Entity entity = getEntity(controller, ref);
@@ -35,10 +35,13 @@ void RenderEntity(Entity_State_Controller &controller, GameState &state, sf::Flo
     {
         if(entity.system & (uint32)ES_CIRCLE_RENDER)
             Entity_System_CircleRender(controller, &state.window, state.current_map, ref);
+
+        if(entity.system & (uint32)ES_PLAYER_RENDER)
+            Entity_System_PlayerRender(controller, &state.window, state.current_map, ref, t);
     }
 }
 
-void RenderWholeMap(Entity_State_Controller &controller, GameState &state)
+void RenderWholeMap(Entity_State_Controller &controller, GameState &state, real32 t)
 {
     TIMED_BLOCK(1);
 
@@ -95,7 +98,7 @@ void RenderWholeMap(Entity_State_Controller &controller, GameState &state)
                 while(entity_index < state.current_map.room[room_index].entity_list.size() &&
                       state.current_map.room[room_index].entity_list[entity_index].sort_key <= y)
                 {
-                    RenderEntity(controller, state, entityViewRegion, state.current_map.room[room_index].entity_list[entity_index++]);
+                    RenderEntity(controller, state, entityViewRegion, state.current_map.room[room_index].entity_list[entity_index++], t);
                 }
 
 
@@ -228,7 +231,7 @@ void GAME_UPDATE_AND_RENDER(GameState &state, InputState input, real32 t)
 
 
 
-    RenderWholeMap(state.entity_controller, state);
+    RenderWholeMap(state.entity_controller, state, t);
 
     if(state.debug.isEnabled)
         updateDebugState(state, input);

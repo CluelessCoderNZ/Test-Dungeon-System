@@ -109,7 +109,7 @@ real32 GameTimer::getInterpoleForTween(real32 t)
         t*=2;
         if(t > 1)
         {
-            t=1.0-t;
+            t=2.0-t;
         }
     }
 

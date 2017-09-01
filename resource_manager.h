@@ -14,7 +14,7 @@ enum Resource_Type
 
 struct resource_handle
 {
-    uint32 id;
+    uint32 id = 0;
 };
 
 struct resource_memory_location
@@ -66,8 +66,8 @@ class ResourceManager
 
         sf::Texture&    getTexture(resource_handle handle);
 
-        uint32                                          resource_currently_loaded;
-        uint32                                          resource_handle_index;
+        uint32                                          resource_currently_loaded = 0;
+        uint32                                          resource_handle_index = 0;
         map<string, resource_info>                      resource_info_map;
         map<uint32, resource_memory_location>           resource_memory_map;
         vector<resource_memory_bucket>                  resource_memory_list;
