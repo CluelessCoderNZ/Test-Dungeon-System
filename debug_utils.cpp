@@ -16,6 +16,7 @@ void copyDebugMenuNode(DebugMenuNode *src, DebugMenuNode *dest)
         dest->children.push_back(new DebugMenuNode());
         copyDebugMenuNode(src->children[i], dest->children[i]);
     }
+    dest->resetParent(dest->parent);
 }
 
 void clearDebugRoamingMenuNodeList(DebugStateInformation &debug, DebugMenuNode *node)
@@ -40,7 +41,11 @@ void reloadDebugResourceManager(DebugStateInformation &debug, DebugMenuNode *nod
 void initDebugState(DebugStateInformation &debug)
 {
     debug.font.loadFromFile("Resources/Fonts/Debug.woff");
-    debug.frameGraphTexture.create(debug.kDebugRecordSnapshotSize, 100);
+    debug.frameGraph_list.resize(kTotalRecordCount+1);
+    for(uint32 i = 0; i < kTotalRecordCount+1; i++)
+    {
+        debug.frameGraph_list[i].graph = new sf::RenderTexture;
+    }
 
     // Initalize UI State
     debug.ui.addNode(new DebugMenuNode("Map"));
@@ -71,6 +76,9 @@ void initDebugState(DebugStateInformation &debug)
         debug.ui.addNode(new DebugMenuNode("Display_FPS", &debug.display_FPS));
         debug.ui.addNode(new DebugMenuNode("Profiler"));
             debug.ui.addNode(new DebugMenuNode("Paused", &debug.simulation_paused));
+            debug.ui.addNode(new DebugMenuNode("Filter", {"None"}, nullptr));
+            debug.ui.lastNodeAdded->option_list.isUnique=true;
+            debug.ui.lastNodeAdded->option_list.option_colour.push_back(sf::Color::White);
             debug.ui.addNode(new DebugMenuNode(DEBUG_UI_NODE_PROFILER), 2);
 
     debug.ui.addNode(new DebugMenuNode("UI"));
@@ -484,7 +492,15 @@ void draw_DebugMenuNodeItemFunction(sf::RenderWindow &window, InputState &input,
 
 void draw_DebugMenuNodeItemList(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, DebugMenuNode *node, sf::Text &text, sf::Vector2f &position)
 {
-    assert(node->option_list.selected_id!=nullptr);
+    if(node->option_list.isUnique)
+    {
+        node->option_list.selected_id = &node->option_list.local_selected_id;
+    }else if(node->option_list.selected_id==nullptr)
+    {
+        node->option_list.selected_id = new uint32;
+        *node->option_list.selected_id = 0;
+    }
+
     real32 height=0;
     string textStr = node->display_name+": ";
     if(*node->option_list.selected_id < node->option_list.option.size())
@@ -509,7 +525,12 @@ void draw_DebugMenuNodeItemList(sf::RenderWindow &window, InputState &input, Deb
     if(*node->option_list.selected_id < node->option_list.option.size())
     {
         text.move(text.getGlobalBounds().width, 0);
-        text.setFillColor(node->option_list.selectedColour);
+        if(*node->option_list.selected_id < node->option_list.option_colour.size())
+        {
+            text.setFillColor(node->option_list.option_colour[*node->option_list.selected_id]);
+        }else{
+            text.setFillColor(node->option_list.selectedColour);
+        }
         text.setString(node->option_list.option[*node->option_list.selected_id]);
         window.draw(text);
     }
@@ -537,8 +558,14 @@ void draw_DebugMenuNodeItemList(sf::RenderWindow &window, InputState &input, Deb
             if(i == *node->option_list.selected_id)
             {
                 text.setFillColor(node->option_list.selectedColour);
+                text.setOutlineColor(sf::Color::White);
             }else{
-                text.setFillColor(node->textColour);
+                if(i < node->option_list.option_colour.size())
+                {
+                    text.setFillColor(node->option_list.option_colour[i]);
+                }else{
+                    text.setFillColor(node->textColour);
+                }
             }
             text.setPosition(position+sf::Vector2f(0,height));
             text.setString(whitespace(2+node->display_name.length())+node->option_list.option[i]);
@@ -553,6 +580,7 @@ void draw_DebugMenuNodeItemList(sf::RenderWindow &window, InputState &input, Deb
             }
 
             window.draw(text);
+            text.setOutlineColor(sf::Color::Black);
             height+=node->margin + text.getGlobalBounds().height;
         }
 
@@ -625,6 +653,51 @@ void draw_DebugFrameEventSlot(frame_event_block *block, sf::RenderTarget &window
     position.y-=rect.getSize().y;
 }
 
+const sf::Texture& getDebugGraphTexture(DebugStateInformation &debug, int32 event_filter=-1)
+{
+    debug_frame_graph *graph;
+    frame_event_block *block;
+
+    if(event_filter==-1)
+    {
+        graph = &debug.frameGraph_list[0];
+    }else if(event_filter >= 0)
+    {
+        graph = &debug.frameGraph_list[event_filter+1];
+    }
+
+
+
+    if(graph->frameLastUpdated == 0)
+    {
+        graph->graph->create(debug.kDebugRecordSnapshotSize, 100);
+    }
+
+    uint64 frameDiff = min(debug.overallFrameIndex-graph->frameLastUpdated, (uint64)debug.kDebugRecordSnapshotSize);
+    if(frameDiff > 0)
+    {
+
+        for(uint32 i = 0; i < frameDiff; i++)
+        {
+            int32 index = debug.debugSnapshotIndex-i;
+            index = (index >= 0) ? index : debug.kDebugRecordSnapshotSize+index;
+            if(event_filter < 0)
+            {
+                block = &debug.debugEventSnapshotArray[index].main_event;
+            }else{
+                block = debug.debugEventSnapshotArray[index].main_event.find(event_filter);
+            }
+
+            sf::Vector2f graphPos = sf::Vector2f(index, graph->graph->getSize().y);
+            draw_DebugFrameEventSlot(block, *graph->graph, debug, graphPos, 1, graph->graph->getSize().y);
+        }
+        graph->graph->display();
+    }
+
+    graph->frameLastUpdated=debug.overallFrameIndex;
+    return graph->graph->getTexture();
+}
+
 void draw_DebugMenuNodeProfiler(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, DebugMenuNode *node, sf::Text &text, sf::Vector2f &position)
 {
     TIMED_BLOCK(1);
@@ -672,9 +745,16 @@ void draw_DebugMenuNodeProfiler(sf::RenderWindow &window, InputState &input, Deb
         {
             if(input.action(MOUSE_LEFTCLICK).isDown)
             {
-                node->ui_profiler.frameSelected = true;
-                debug.simulation_paused = true;
-                node->ui_profiler.frameSelected_id = i;
+                if(input.action(MOUSE_LEFTCLICK).state == BUTTON_PRESSED)
+                {
+                    debug.simulation_paused=true;
+                }
+
+                if(debug.simulation_paused)
+                {
+                    node->ui_profiler.frameSelected = true;
+                    node->ui_profiler.frameSelected_id = i;
+                }
             }
             if(input.mouse_stillFrameCount > 10)
             {
@@ -702,9 +782,16 @@ void draw_DebugMenuNodeProfiler(sf::RenderWindow &window, InputState &input, Deb
 
     real32 graphHeight = (node->ui_profiler.viewport_size.y-localPosition.y)*node->ui_profiler.frameGraphHeight;
 
+    int32 graph_filter = -1;
+    DebugMenuNode* filterListNode = node->parent->getChildByName("Filter");
+    if(filterListNode!=nullptr)
+    {
+        graph_filter = filterListNode->option_list.local_selected_id-1;
+    }
+
     sf::Sprite graph;
-    graph.setTexture(debug.frameGraphTexture.getTexture());
-    graph.setScale(sf::Vector2f(node->ui_profiler.viewport_size.x/debug.frameGraphTexture.getSize().x,graphHeight/debug.frameGraphTexture.getSize().y));
+    graph.setTexture(getDebugGraphTexture(debug, graph_filter));
+    graph.setScale(sf::Vector2f(node->ui_profiler.viewport_size.x/graph.getTexture()->getSize().x,graphHeight/graph.getTexture()->getSize().y));
     graph.setPosition(position+localPosition);
     window.draw(graph);
 
@@ -937,10 +1024,6 @@ void collateDebugEventFrameData(DebugStateInformation &debug)
             }
 
             //sortDebugEventFrame(frame->main_event.children[0]);
-
-            sf::Vector2f graphPos = sf::Vector2f(debug.debugSnapshotIndex, debug.frameGraphTexture.getSize().y);
-            draw_DebugFrameEventSlot(&debug.debugEventSnapshotArray[debug.debugSnapshotIndex].main_event, debug.frameGraphTexture, debug, graphPos, 1, debug.frameGraphTexture.getSize().y);
-            debug.frameGraphTexture.display();
         }
 
         debug.debugSnapshotIndex++;
@@ -948,6 +1031,21 @@ void collateDebugEventFrameData(DebugStateInformation &debug)
             debug.debugSnapshotIndex=0;
     }
     DebugEvent_Index=0;
+    debug.overallFrameIndex++;
+
+    DebugMenuNode* node = debug.ui.rootNode.getChildByName("System")->getChildByName("Profiler")->getChildByName("Filter");
+    if(node != nullptr)
+    {
+        node->option_list.option[0] = "None";
+        node->option_list.option.resize(kTotalRecordCount+1);
+        node->option_list.option_colour.resize(kTotalRecordCount+1);
+
+        for(uint32 i = 0; i < kTotalRecordCount; i++)
+        {
+            node->option_list.option[i+1] = (DebugProfileRecordArray[i].functionName);
+            node->option_list.option_colour[i+1] = (kDebug_ColourPalatte[i]);
+        }
+    }
 }
 
 

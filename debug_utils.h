@@ -104,6 +104,21 @@ struct frame_event_block
             delete children[i];
         }
     }
+    frame_event_block* find(uint16 find_id)
+    {
+        if(record_id==find_id)
+        {
+            return this;
+        }else{
+            for(uint32 i = 0; i < children.size(); i++)
+            {
+                frame_event_block* result = children[i]->find(find_id);
+                if(result!=nullptr) return result;
+            }
+        }
+
+        return nullptr;
+    }
 };
 
 struct frame_event_summary
@@ -205,10 +220,14 @@ enum DebugMenuNodeType
 struct DebugItemListData
 {
     bool listIsOpen=false;
-    vector<string> option;
+    vector<string>      option;
+    vector<sf::Color>   option_colour;
+    bool       isUnique=false;
     uint32*    selected_id=nullptr;
+    uint32     local_selected_id=0;
 
-    sf::Color selectedColour = sf::Color(48,230,255);
+
+    sf::Color selectedColour = sf::Color(36,180,200);
 };
 
 struct DebugProfilerUiData
@@ -235,6 +254,9 @@ struct DebugProfilerUiData
     sf::Color    frameContextOutlineColour = sf::Color::Black;
     uint32       frameLayerHeight = 20;
     uint32       frameContextPadding = 10;
+
+    uint64            frameIndexOfLastGraphUpdate=0;
+    bool              frameTextureRewrite=false;
 
     uint16       framerateThresholdFine     = 60;
     uint16       framerateThresholdWarning  = 55;
@@ -265,13 +287,33 @@ struct DebugMenuNode
         bool* bool_pointer;                               // ITEM_BOOL
         void (*function_pointer)(DebugStateInformation&, DebugMenuNode*); // FUNCTION
     };
-    DebugProfilerUiData ui_profiler;                  // PROFILER
+    DebugProfilerUiData ui_profiler;                      // PROFILER
     DebugItemListData option_list;                        // ITEM_LIST
 
     vector<DebugMenuNode*> children;
     DebugMenuNode*         parent=nullptr;
 
     void draw(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, sf::Text &text, sf::Vector2f &position, uint32 indent);
+    DebugMenuNode* getChildByName(string name)
+    {
+        for(uint32 i = 0; i < children.size(); i++)
+        {
+            if(children[i]->display_name==name)
+            {
+                return children[i];
+            }
+        }
+        return nullptr;
+    }
+    void resetParent(DebugMenuNode* new_parent)
+    {
+        parent = new_parent;
+        for(uint32 i = 0; i < children.size(); i++)
+        {
+            children[i]->resetParent(this);
+        }
+    }
+
     DebugMenuNode(){}
     ~DebugMenuNode()
     {
@@ -399,6 +441,12 @@ struct debug_frame_record
     sf::Time duration = sf::milliseconds(0);
 };
 
+struct debug_frame_graph
+{
+    sf::RenderTexture *graph;
+    uint64            frameLastUpdated=0;
+};
+
 struct DebugStateInformation
 {
     bool     isEnabled = false;
@@ -406,7 +454,6 @@ struct DebugStateInformation
     DebugMenuUIState         ui;
 
     sf::Font font;
-    sf::RenderTexture frameGraphTexture;
     string   additionalInfo;
 
     GameState *gamestate=nullptr;
@@ -446,6 +493,7 @@ struct DebugStateInformation
     bool    display_TileAO=false;
 
     // Debug Data
+    uint64 overallFrameIndex        = 0;
     uint32 kDebugRecordSnapshotSize = 180;
     uint32 debugSnapshotIndex=0;
     frame_event_summary debugEventSnapshotArray[180];
@@ -453,6 +501,8 @@ struct DebugStateInformation
     real32   lastRecordedFrameRate=60;
     int32    mouse_hovered_room_id = -1;
 
+
+    vector<debug_frame_graph> frameGraph_list;
 
     // UI Settings
     sf::Color colour_AdditionalInfo             = sf::Color::Yellow;
