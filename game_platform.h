@@ -6,23 +6,17 @@
 #include <SFML/Graphics.hpp>
 #include "game_consts.h"
 #include "game_input.h"
-#include "game_input.cpp"
 #include "entity.h"
-#include "entity.cpp"
 #include "game_map.h"
-#include "game_map.cpp"
 #include "game_tileset.h"
-#include "game_tileset.cpp"
 #include "math_utils.h"
-#include "math_utils.cpp"
 #include "debug_utils.h"
-#include "debug_utils.cpp"
 #include "game_timer.h"
-#include "game_timer.cpp"
-#include "game_item.cpp"
+#include "game_item.h"
 
 using namespace std;
 
+struct DebugStateInformation;
 struct GameState
 {
     bool                    pausedGameplay       = false;

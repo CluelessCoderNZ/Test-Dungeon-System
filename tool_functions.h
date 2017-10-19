@@ -5,17 +5,17 @@
 #include <iostream>
 #include <typeinfo>
 #include <bitset>
+#include <iomanip>
 #include "json/json.h"
-#include "jsoncpp.cpp"
 #include "game_consts.h"
 #include "math_utils.h"
-#include "math_utils.cpp"
 
 using namespace std;
 
 string numToStr(real32 value, int32 sf = -1);
 string numToStr(int32 value);
 string binaryToStr(byte value);
+bool   str2char(string &str, char* dest, uint32 buffer_size);
 
 string variableToStr(sf::Vector2u  value);
 string variableToStr(sf::Vector2f  value);
@@ -31,6 +31,8 @@ string variableToStr(bool          value);
 string fastReadFile(string filename);
 Json::Value readJsonFile(string filename);
 
+bool createLinearJsonFromMemory(Json::Value &root, byte* source, string format);
+bool saveLinearJsonFileFromMemory(string filename, byte* source, string format);
 bool loadLinearJsonIntoMemory(Json::Value &root, byte* dest, string format, bool haltIfMemberDoesNotExist=true);
 
 uint32 str2uint(string a);

@@ -1,11 +1,9 @@
 #ifndef GAME_ITEM_H
 #define GAME_ITEM_H
 #include "game_consts.h"
-#include "resource_manager.cpp"
+#include "resource_manager.h"
 #include "tool_functions.h"
-#include "tool_functions.cpp"
 #include "math_utils.h"
-#include "math_utils.cpp"
 
 
 struct game_item
@@ -34,6 +32,8 @@ struct ItemManager
         return item_list[ref.id];
     }
 };
+
+void loadItemListFromConfigFile(ItemManager &manager, string filename, bool reloadItemList=false);
 
 
 #endif

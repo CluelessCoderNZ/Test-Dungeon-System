@@ -1,6 +1,7 @@
 #ifndef GAME_CONSTS_H
 #define GAME_CONSTS_H
 #include <iostream>
+#include <assert.h>
 
 using namespace std;
 

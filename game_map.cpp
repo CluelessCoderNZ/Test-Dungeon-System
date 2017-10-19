@@ -434,7 +434,7 @@ GameMap generateRandomGenericDungeon(uint32 seed, string roomdata_filename)
     }
 
     {   // Generate Graph Map of room's doors
-        vector<Vec2f> points;
+        vector<Vector2<float>> points;
 
         for(uint32 i = 0; i < map.room.size(); i++)
         {
@@ -442,14 +442,14 @@ GameMap generateRandomGenericDungeon(uint32 seed, string roomdata_filename)
             {
                 if(map.room[i].metadata[j].type == "Door")
                 {
-                    points.push_back(Vec2f(map.room[i].bounds.left + map.room[i].metadata[j].position.x, map.room[i].bounds.top + map.room[i].metadata[j].position.y));
+                    points.push_back(Vector2<float>(map.room[i].bounds.left + map.room[i].metadata[j].position.x, map.room[i].bounds.top + map.room[i].metadata[j].position.y));
                 }
             }
         }
         // Generate graph node edges through triangulation
-        Delaunay triangulation;
+        Delaunay<float> triangulation;
         triangulation.triangulate(points);
-        vector<Edge> rawedges = triangulation.getEdges();
+        vector<Edge<float>> rawedges = triangulation.getEdges();
         vector<MapRoom_GraphEdge> sortedGraphMap;
 
         // Cull inter-room edges and sorts for MST
@@ -898,7 +898,7 @@ bool generateRoomClusterNode(GameMap &map, mt19937 &random_engine, RoomIndexConf
 void generateGraphMap(GameMap &map, vector<MapRoom_GraphEdge> &outputMap, vector<uint32> &roomList, mt19937 &random_engine)
 {
     // Create list of all door points
-    vector<Vec2f> doorPoints;
+    vector<Vector2<float>> doorPoints;
     for(uint32 listID = 0; listID < roomList.size(); listID++)
     {
         uint32 i = roomList[listID];
@@ -906,14 +906,14 @@ void generateGraphMap(GameMap &map, vector<MapRoom_GraphEdge> &outputMap, vector
         {
             if(map.room[i].metadata[j].type == "Door" && !map.room[i].metadata[j].data.isMember("InUse"))
             {
-                doorPoints.push_back(Vec2f(map.room[i].bounds.left + map.room[i].metadata[j].position.x, map.room[i].bounds.top + map.room[i].metadata[j].position.y));
+                doorPoints.push_back(Vector2<float>(map.room[i].bounds.left + map.room[i].metadata[j].position.x, map.room[i].bounds.top + map.room[i].metadata[j].position.y));
             }
         }
     }
 
     // Generate door node edges through triangulation
-    Delaunay triangulation;
-    vector<Edge> rawedges;
+    Delaunay<float> triangulation;
+    vector<Edge<float>> rawedges;
 
     if(doorPoints.size() > 0)
     {
@@ -1749,7 +1749,7 @@ void insertion_sortRoomOrder(GameMap &map)
     }
 }
 
-void debugRenderRoom(sf::RenderTarget *target, GameMap &map, uint32 roomID)
+void debugRenderRoom(sf::RenderTarget *target, GameMap &map, uint32 roomID) // TODO(Connor): Depreciate
 {
     sf::RectangleShape roomBoundary;
     roomBoundary.setSize(sf::Vector2f(map.room[roomID].bounds.width * map.tileSize.x, map.room[roomID].bounds.height * map.tileSize.y));

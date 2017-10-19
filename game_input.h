@@ -75,7 +75,7 @@ struct Keybind
 };
 
 
-InputState pollForKeyboardInput(InputState input);
+InputState pollForKeyboardInput(InputState input, Keybind keybind);
 
 
 #endif /* end of include guard: GAME_INPUT_H */

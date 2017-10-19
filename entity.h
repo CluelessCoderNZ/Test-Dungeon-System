@@ -7,14 +7,14 @@
 #include "game_consts.h"
 #include "game_map.h"
 #include "math_utils.h"
-#include "math_utils.cpp"
 #include "resource_manager.h"
-#include "resource_manager.cpp"
-#include "game_animation.cpp"
+#include "game_animation.h"
+#include "game_input.h"
 
 using namespace std;
 
-struct GameState;
+struct GameMap;
+struct MapRoomConnection;
 
 enum entity_type
 {
@@ -23,7 +23,7 @@ enum entity_type
 };
 
 #define kEntityTypeCount 2
-string kEntityTypeString[] =
+const string kEntityTypeString[] =
 {
     "Player",
     "DumbAI"

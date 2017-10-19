@@ -28,7 +28,7 @@ void UpdateEntity(Entity_State_Controller &controller, GameState &state, InputSt
 
 void RenderEntity(Entity_State_Controller &controller, GameState &state, sf::FloatRect &viewport, Entity_Reference &ref, real32 t)
 {
-    TIMED_BLOCK(1);
+     TIMED_BLOCK(1, 9);
     Entity entity = getEntity(controller, ref);
 
     if(viewport.contains(localRoomPositionToScreen(state.current_map, *((Entity_Component_Position*)getEntityComponent(controller, ref, EC_POSITION)))))
@@ -43,7 +43,7 @@ void RenderEntity(Entity_State_Controller &controller, GameState &state, sf::Flo
 
 void RenderWholeMap(Entity_State_Controller &controller, GameState &state, real32 t)
 {
-    TIMED_BLOCK(1);
+     TIMED_BLOCK(1, 10);
 
     // Todo apply X restictions
     sf::IntRect   pixelViewRegion = sf::IntRect(state.gameview.getCenter().x - state.gameview.getSize().x/2, state.gameview.getCenter().y - state.gameview.getSize().y/2, state.gameview.getSize().x, state.gameview.getSize().y);
@@ -120,7 +120,7 @@ void RenderWholeMap(Entity_State_Controller &controller, GameState &state, real3
 
 void GAME_UPDATE_AND_RENDER(GameState &state, InputState input, real32 t)
 {
-    TIMED_BLOCK(1);
+    TIMED_BLOCK(1, 11);
     real32 entityUpdateT = t;
     if(state.pausedGameplay)
     {
@@ -146,7 +146,7 @@ void GAME_UPDATE_AND_RENDER(GameState &state, InputState input, real32 t)
     // Simulate sim room
     for(uint32 i = 0; i < state.current_map.room[state.activeSimRoom].entity_list.size(); i++)
     {
-        NAMED_BLOCK("Entity_Update", 1);
+         NAMED_BLOCK("Entity_Update", 1, 12);
         UpdateEntity(state.entity_controller, state, input, state.current_map.room[state.activeSimRoom].entity_list[i], entityUpdateT);
     }
 
@@ -157,7 +157,7 @@ void GAME_UPDATE_AND_RENDER(GameState &state, InputState input, real32 t)
         uint32 connectID = state.current_map.room[state.activeSimRoom].connection[connect_index].secondaryRoom.id;
         for(uint32 i = 0; i < state.current_map.room[connectID].entity_list.size(); i++)
         {
-            NAMED_BLOCK("Entity_Update", 1);
+             NAMED_BLOCK("Entity_Update", 1, 13);
             UpdateEntity(state.entity_controller, state, input, state.current_map.room[connectID].entity_list[i], entityUpdateT);
         }
     }
@@ -270,8 +270,7 @@ void CleanUpGameState(GameState &state)
 
 void updateDebugState(GameState &state, InputState input)
 {
-    TIMED_BLOCK(1);
-    state.debug.gamestate = &state;
+     TIMED_BLOCK(1, 14);
 
     if(!state.cameraUnlocked)
         state.pausedGameplay=state.debug.simulation_paused;
@@ -353,19 +352,6 @@ void updateDebugState(GameState &state, InputState input)
         }
     }
 
-    if(state.debug.trigger_reloadItemList)
-    {
-        state.debug.trigger_reloadItemList=false;
-
-        loadItemListFromConfigFile(state.item_manager, "Resources/Config/item_list.json", true);
-        state.debug.node_itemList->option_list.option.clear();
-        for (map<uint32, game_item>::iterator it=state.item_manager.item_list.begin(); it!=state.item_manager.item_list.end(); it++)
-        {
-            state.debug.node_itemList->option_list.option.push_back(it->second.name);
-            state.debug.node_itemList->option_list.option.push_back("-> "+it->second.description);
-        }
-    }
-
     // ------
     // RENDER
     // ------
@@ -378,7 +364,7 @@ void updateDebugState(GameState &state, InputState input)
         for(int32 x = game_viewport.left; x < game_viewport.left + game_viewport.width; x+=state.current_map.tileSize.x)
         {
             uint32 _x = x - (x%state.current_map.tileSize.x);
-            sf::Color lineColour = state.debug.colour_tilegrid;
+            sf::Color lineColour = state.debug.colour.tilegrid;
             sf::Vertex line[] =
             {
                 sf::Vertex(sf::Vector2f(_x, game_viewport.top),    lineColour),
@@ -392,7 +378,7 @@ void updateDebugState(GameState &state, InputState input)
         for(int32 y = game_viewport.top; y < game_viewport.top + game_viewport.height; y+=state.current_map.tileSize.y)
         {
             uint32 _y = y - (abs(y)%state.current_map.tileSize.y);
-            sf::Color lineColour = state.debug.colour_tilegrid;
+            sf::Color lineColour = state.debug.colour.tilegrid;
             sf::Vertex line[] =
             {
                 sf::Vertex(sf::Vector2f(game_viewport.left, _y), lineColour),
@@ -406,9 +392,15 @@ void updateDebugState(GameState &state, InputState input)
 
     if(state.debug.display_RoomBoundaries)
     {
-        for(uint32 i = 0; i < state.current_map.room.size(); i++)
+        for(uint32 roomID = 0; roomID < state.current_map.room.size(); roomID++)
         {
-            debugRenderRoom(&state.window, state.current_map, i);
+            sf::RectangleShape roomBoundary;
+            roomBoundary.setSize(sf::Vector2f(state.current_map.room[roomID].bounds.width * state.current_map.tileSize.x, state.current_map.room[roomID].bounds.height * state.current_map.tileSize.y));
+            roomBoundary.setPosition(sf::Vector2f(state.current_map.room[roomID].bounds.left * state.current_map.tileSize.x, state.current_map.room[roomID].bounds.top * state.current_map.tileSize.y));
+            roomBoundary.setOutlineThickness(4);
+            roomBoundary.setOutlineColor(state.debug.colour.roomBoundaries);
+            roomBoundary.setFillColor(sf::Color::Transparent);
+            state.window.draw(roomBoundary);
         }
     }
 
@@ -416,7 +408,7 @@ void updateDebugState(GameState &state, InputState input)
     {
         for(uint32 i = 0; i < state.current_map.graphMap.size(); i++)
         {
-            sf::Color lineColour = state.debug.colour_roomGraph;
+            sf::Color lineColour = state.debug.colour.roomGraph;
             sf::Vertex line[] =
             {
                 sf::Vertex(sf::Vector2f(state.current_map.graphMap[i].p1.point.x * state.current_map.tileSize.x, state.current_map.graphMap[i].p1.point.y * state.current_map.tileSize.y), lineColour),
@@ -443,8 +435,8 @@ void updateDebugState(GameState &state, InputState input)
             for(uint32 i = 0; i < state.current_map.room[state.debug.mouse_hovered_room_id].connection.size(); i++)
             {
                 uint32 connect_room_id = state.current_map.room[state.debug.mouse_hovered_room_id].connection[i].secondaryRoom.id;
-                sf::Color lineColour = state.debug.colour_roomConnections;
-                sf::Color secondColour = state.debug.colour_roomConnectionHighlight;
+                sf::Color lineColour = state.debug.colour.roomConnections;
+                sf::Color secondColour = state.debug.colour.roomConnectionHighlight;
                 sf::Vertex line[] =
                 {
                     sf::Vertex(sf::Vector2f((state.current_map.room[state.debug.mouse_hovered_room_id].bounds.left + state.current_map.room[state.debug.mouse_hovered_room_id].bounds.width/2 ) * state.current_map.tileSize.x,
@@ -482,7 +474,7 @@ void updateDebugState(GameState &state, InputState input)
         {
             sf::Text text_room_id;
             text_room_id.setFont(state.debug.font);
-            text_room_id.setFillColor(state.debug.colour_roomid);
+            text_room_id.setFillColor(state.debug.colour.roomid);
             text_room_id.setOutlineThickness(1);
             text_room_id.setOutlineColor(sf::Color::White);
             text_room_id.setPosition(input.mouse_screenPos.x + 5, input.mouse_screenPos.y + 5);
@@ -492,7 +484,7 @@ void updateDebugState(GameState &state, InputState input)
 
             if(state.debug.display_roomDifficulty)
             {
-                text_room_id.setFillColor(state.debug.colour_roomDifficulty);
+                text_room_id.setFillColor(state.debug.colour.roomDifficulty);
                 text_room_id.move(text_room_id.getLocalBounds().width + 10,0);
                 text_room_id.setString(numToStr((int32)state.current_map.room[state.debug.mouse_hovered_room_id].steps_fromHomeRoom));
                 state.window.draw(text_room_id);
@@ -527,13 +519,15 @@ void updateDebugState(GameState &state, InputState input)
         state.debug.additionalInfo = state.debug.additionalInfo+"TileAO: "+binaryToStr((int32)tileAO)+"\n";
     }
 
-    sf::Text additionalText;
+    /*sf::Text additionalText;
     additionalText.setPosition(state.debug.ui.draw(state.window, input, state.debug, state.debug.font));
     additionalText.setFont(state.debug.font);
-    additionalText.setFillColor(state.debug.colour_AdditionalInfo);
+    additionalText.setFillColor(state.debug.colour.AdditionalInfo);
     additionalText.setCharacterSize(16);
     additionalText.setString(state.debug.additionalInfo);
-    state.window.draw(additionalText);
+    state.window.draw(additionalText);*/
+
+    ShowDebugWindows(state.debug);
 }
 
 #endif /* end of include guard: GAME_PLATFORM_CPP */

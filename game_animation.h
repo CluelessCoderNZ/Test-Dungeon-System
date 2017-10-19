@@ -1,11 +1,8 @@
 #ifndef GAME_ANIMATION_H
 #define GAME_ANIMATION_H
 #include "game_timer.h"
-#include "game_timer.cpp"
 #include "resource_manager.h"
-#include "resource_manager.cpp"
 #include "tool_functions.h"
-#include "tool_functions.cpp"
 
 
 class Animation

@@ -1,7 +1,6 @@
 #ifndef DEBUG_UTILS_CPP
 #define DEBUG_UTILS_CPP
 #include "debug_utils.h"
-#include <iostream>
 
 
 using namespace std;
@@ -41,6 +40,29 @@ void reloadDebugResourceManager(DebugStateInformation &debug, DebugMenuNode *nod
 void initDebugState(DebugStateInformation &debug)
 {
     debug.font.loadFromFile("Resources/Fonts/Debug.woff");
+
+    ImGuiIO& IO = ImGui::GetIO();
+    IO.Fonts->Clear();
+    IO.Fonts->AddFontFromFileTTF("Resources/Fonts/Cousine-Regular.ttf", 16.f);
+    ImGui::SFML::UpdateFontTexture();
+    //ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);
+
+    // Load Inital Settings
+    {
+        // Debug Style Colours
+        Json::Value root = readJsonFile(kDataFile_debug_colours);
+        if(!loadLinearJsonIntoMemory(root, (byte*)(&debug.colour), kDataFormat_debug_colours, true))
+        {
+            cout << "Error when loading debug style settings" << endl;
+        }
+    }
+
+
+
+
+    debug.debugEventSnapshotArray = new frame_event_block[debug.kDebugRecordSnapshotSize*kTotalRecordCount]();
+
+
     debug.frameGraph_list.resize(kTotalRecordCount+1);
     for(uint32 i = 0; i < kTotalRecordCount+1; i++)
     {
@@ -93,7 +115,7 @@ void initDebugState(DebugStateInformation &debug)
 
 void updateDebugMemoryAnalyzer(DebugStateInformation &debug, GameMap &map, InputState &input)
 {
-    TIMED_BLOCK(1);
+     TIMED_BLOCK(1, 0);
     // Update Window to match
     if(debug.memoryAnalyzer.isEnabled)
     {
@@ -595,23 +617,27 @@ void draw_DebugMenuNodeItemList(sf::RenderWindow &window, InputState &input, Deb
     position.y+=height;
 }
 
-void draw_DebugFrameEventBlock(frame_event_block *block, sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, DebugMenuNode *node, sf::Text &text, sf::Vector2f &position, uint32 width, uint32 layerHeight)
+void draw_DebugFrameEventBlock(uint32 &event_id, uint32 snapshot_id, sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, DebugMenuNode *node, sf::Text &text, sf::Vector2f &position, uint32 width, uint32 layerHeight)
 {
     sf::RectangleShape rect;
     rect.setPosition(position);
     rect.setSize(sf::Vector2f(width, layerHeight*node->ui_profiler.frameLayerHeight+node->ui_profiler.frameContextPadding));
-    rect.setFillColor(kDebug_ColourPalatte[block->record_id % DEBUG_MAX_COLOURPALATTE]);
+    rect.setFillColor(kDebug_ColourPalatte[debug.getEventSnapshot(event_id, snapshot_id)->record_id % DEBUG_MAX_COLOURPALATTE]);
     rect.setOutlineColor(node->ui_profiler.frameContextOutlineColour);
     rect.setOutlineThickness(node->ui_profiler.frameContextOutlineWidth);
     window.draw(rect);
 
     if(rect.getGlobalBounds().contains(input.mouse_screenPos.x, input.mouse_screenPos.y) && input.mouse_stillFrameCount > 10)
     {
-        node->ui_profiler.tooltip_text = "Name: "+DebugProfileRecordArray[block->record_id].functionName+"\nFile: "+DebugProfileRecordArray[block->record_id].fileName+":"+variableToStr(DebugProfileRecordArray[block->record_id].lineNumber)+"\n\nTotalClock: "+variableToStr(block->clock_time)+"cy\nHits: "+variableToStr(block->hitCount)+"hit\nClocks/Hit: "+variableToStr(block->clock_time/block->hitCount)+"cy/hit";
+        node->ui_profiler.tooltip_text = "Name: "+DebugProfileRecordArray[debug.getEventSnapshot(event_id, snapshot_id)->record_id].functionName+
+                                         "\nFile: "+DebugProfileRecordArray[debug.getEventSnapshot(event_id, snapshot_id)->record_id].fileName+":"+variableToStr(DebugProfileRecordArray[debug.getEventSnapshot(event_id, snapshot_id)->record_id].lineNumber)+
+                                         "\n\nTotalClock: "+variableToStr((uint32)debug.getEventSnapshot(event_id, snapshot_id)->clock_time)+
+                                         "cy\nHits: "+variableToStr((uint32)debug.getEventSnapshot(event_id, snapshot_id)->hitCount)+
+                                         "hit\nClocks/Hit: "+variableToStr((uint32)debug.getEventSnapshot(event_id, snapshot_id)->clock_time/debug.getEventSnapshot(event_id, snapshot_id)->hitCount)+"cy/hit";
     }
 
     text.setCharacterSize(node->ui_profiler.frameLayerHeight*0.75);
-    text.setString(DebugProfileRecordArray[block->record_id].functionName);
+    text.setString(DebugProfileRecordArray[debug.getEventSnapshot(event_id, snapshot_id)->record_id].functionName);
     if(text.getGlobalBounds().width+5 < rect.getSize().x)
     {
         text.setFillColor(sf::Color::White);
@@ -619,36 +645,48 @@ void draw_DebugFrameEventBlock(frame_event_block *block, sf::RenderWindow &windo
         window.draw(text);
     }
 
+
     sf::Vector2f child_position=position+sf::Vector2f(0,node->ui_profiler.frameLayerHeight);
-    for(uint32 i = 0; i < block->children.size(); i++)
+
+    uint32 parent_id = event_id;
+    for(uint32 child_id = event_id+1; child_id < kTotalRecordCount; child_id++)
     {
-        real32 child_width=width*((real32)block->children[i]->clock_time/block->clock_time);
-        draw_DebugFrameEventBlock(block->children[i], window, input, debug, node, text, child_position, child_width, layerHeight-1);
+        // Check if not child
+        if(debug.getEventSnapshot(child_id, snapshot_id)->parent!=parent_id) break;
+
+        real32 child_width=width*((real32)debug.getEventSnapshot(child_id, snapshot_id)->clock_time/debug.getEventSnapshot(parent_id, snapshot_id)->clock_time);
+        draw_DebugFrameEventBlock(child_id, parent_id, window, input, debug, node, text, child_position, child_width, layerHeight-1);
+        event_id+=1;
     }
+
     position.x+=rect.getSize().x;
 }
 
-void draw_DebugFrameEventSlot(frame_event_block *block, sf::RenderTarget &window, DebugStateInformation &debug, sf::Vector2f &position, uint32 width, uint32 height)
+void draw_DebugFrameEventSlot(uint32 &event_id, uint32 snapshot_id, sf::RenderTarget &window, DebugStateInformation &debug, sf::Vector2f &position, uint32 width, uint32 height)
 {
     sf::RectangleShape rect;
     rect.setPosition(position-sf::Vector2f(0,height));
     rect.setSize(sf::Vector2f(width, height));
-    if(DebugProfileRecordArray[block->record_id].functionName=="Program")
-    {
-        rect.setFillColor(sf::Color(20,20,20));
-    }else if(DebugProfileRecordArray[block->record_id].functionName=="Idle")
+    string name = DebugProfileRecordArray[debug.getEventSnapshot(event_id, snapshot_id)->record_id].functionName;
+
+    if(name=="Program" || name=="Idle")
     {
         rect.setFillColor(sf::Color(20,20,20));
     }else{
-        rect.setFillColor(kDebug_ColourPalatte[block->record_id % DEBUG_MAX_COLOURPALATTE]);
+        rect.setFillColor(kDebug_ColourPalatte[debug.getEventSnapshot(event_id, snapshot_id)->record_id % DEBUG_MAX_COLOURPALATTE]);
     }
     window.draw(rect);
 
     sf::Vector2f child_position=position;
-    for(uint32 i = 0; i < block->children.size(); i++)
+    uint32 parent_id = event_id;
+    for(uint32 child_id = event_id+1; child_id < kTotalRecordCount; child_id++)
     {
-        real32 child_height=height*((real32)block->children[i]->clock_time/block->clock_time);
-        draw_DebugFrameEventSlot(block->children[i], window, debug, child_position, width, child_height);
+        // Check if not child
+        if(debug.getEventSnapshot(child_id, snapshot_id)->parent!=parent_id) break;
+
+        real32 child_height=height*((real32)debug.getEventSnapshot(child_id, snapshot_id)->clock_time/debug.getEventSnapshot(parent_id, snapshot_id)->clock_time);
+        draw_DebugFrameEventSlot(child_id, snapshot_id, window, debug, child_position, width, child_height);
+        event_id+=1;
     }
     position.y-=rect.getSize().y;
 }
@@ -656,7 +694,6 @@ void draw_DebugFrameEventSlot(frame_event_block *block, sf::RenderTarget &window
 const sf::Texture& getDebugGraphTexture(DebugStateInformation &debug, int32 event_filter=-1)
 {
     debug_frame_graph *graph;
-    frame_event_block *block;
 
     if(event_filter==-1)
     {
@@ -676,20 +713,25 @@ const sf::Texture& getDebugGraphTexture(DebugStateInformation &debug, int32 even
     uint64 frameDiff = min(debug.overallFrameIndex-graph->frameLastUpdated, (uint64)debug.kDebugRecordSnapshotSize);
     if(frameDiff > 0)
     {
-
         for(uint32 i = 0; i < frameDiff; i++)
         {
+            uint32 block_id=0;
             int32 index = debug.debugSnapshotIndex-i;
             index = (index >= 0) ? index : debug.kDebugRecordSnapshotSize+index;
-            if(event_filter < 0)
+            if(event_filter >= 0)
             {
-                block = &debug.debugEventSnapshotArray[index].main_event;
-            }else{
-                block = debug.debugEventSnapshotArray[index].main_event.find(event_filter);
+                for(uint32 i = 0; i < kTotalRecordCount;i++)
+                {
+                    if(debug.getEventSnapshot(i, index)->record_id==event_filter)
+                    {
+                        block_id=i;
+                        break;
+                    }
+                }
             }
 
             sf::Vector2f graphPos = sf::Vector2f(index, graph->graph->getSize().y);
-            draw_DebugFrameEventSlot(block, *graph->graph, debug, graphPos, 1, graph->graph->getSize().y);
+            draw_DebugFrameEventSlot(block_id, index, *graph->graph, debug, graphPos, 1, graph->graph->getSize().y);
         }
         graph->graph->display();
     }
@@ -700,7 +742,7 @@ const sf::Texture& getDebugGraphTexture(DebugStateInformation &debug, int32 even
 
 void draw_DebugMenuNodeProfiler(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, DebugMenuNode *node, sf::Text &text, sf::Vector2f &position)
 {
-    TIMED_BLOCK(1);
+     TIMED_BLOCK(1, 1);
     sf::Vector2f localPosition;
     node->ui_profiler.frameSelected = debug.simulation_paused;
     node->ui_profiler.tooltip_text="";
@@ -806,10 +848,11 @@ void draw_DebugMenuNodeProfiler(sf::RenderWindow &window, InputState &input, Deb
 
     sf::Vector2f eventBlockPosition = position+localPosition;
     sf::Text eventBlockText = text;
-    node->ui_profiler.frameLayerHeight = (node->ui_profiler.viewport_size.y-eventBlockPosition.y+position.y)/(debug.debugEventSnapshotArray[selectedSlot].max_depth+0.5);
+    node->ui_profiler.frameLayerHeight = (node->ui_profiler.viewport_size.y-eventBlockPosition.y+position.y)/(debug.debugSnapshotMaxDepth+0.5);
     node->ui_profiler.frameContextPadding = node->ui_profiler.frameLayerHeight/2;
+    uint32 event_id=1;
 
-    draw_DebugFrameEventBlock(debug.debugEventSnapshotArray[selectedSlot].main_event.children[0], window, input, debug, node, eventBlockText, eventBlockPosition, node->ui_profiler.viewport_size.x, debug.debugEventSnapshotArray[selectedSlot].max_depth);
+    draw_DebugFrameEventBlock(event_id, selectedSlot, window, input, debug, node, eventBlockText, eventBlockPosition, node->ui_profiler.viewport_size.x, debug.debugSnapshotMaxDepth);
 
     sf::RectangleShape selector;
     selector.setSize(sf::Vector2f(node->ui_profiler.selectionSize, node->ui_profiler.selectionSize));
@@ -880,7 +923,7 @@ void DebugMenuNode::draw(sf::RenderWindow &window, InputState &input, DebugState
 
 sf::Vector2f DebugMenuUIState::draw(sf::RenderWindow &window, InputState &input, DebugStateInformation &debug, sf::Font &font)
 {
-    NAMED_BLOCK("DebugMenuState::draw",1);
+    NAMED_BLOCK("DebugMenuState", 1, 2);
     sf::Text text;
     text.setFont(font);
     text.setCharacterSize(textSize);
@@ -941,38 +984,26 @@ sf::Vector2f DebugMenuUIState::draw(sf::RenderWindow &window, InputState &input,
     return position;
 }
 
-
-bool sortDebugEventFrameClockCount(frame_event_block *a, frame_event_block *b)
-{
-    return (a->clock_time > b->clock_time);
-}
-
-void sortDebugEventFrame(frame_event_block *block)
-{
-    assert(block != nullptr);
-    sort (block->children.begin(), block->children.end(), sortDebugEventFrameClockCount);
-    for(uint32 x=0; x < block->children.size(); x++)
-    {
-        sortDebugEventFrame(block->children[x]);
-    }
-}
-
 void collateDebugEventFrameData(DebugStateInformation &debug)
 {
     if(!debug.simulation_paused)
     {
         if(DebugEvent_Index > 0)
         {
-            uint32 current_depth=1;
+            uint32          current_depth=0;
 
-            frame_event_summary* frame = &debug.debugEventSnapshotArray[debug.debugSnapshotIndex];
-            *frame = frame_event_summary();
-            frame_event_block* target = &frame->main_event;
-            target->record_id  = DebugEventList[0].record_id;
-            target->startClock = DebugEventList[0].clock;
-            target->hitCount  += DebugEventList[0].hitCount;
+            uint32          current_event_index=0;
+            uint32          frame_index = debug.debugSnapshotIndex;
+            stack<uint32>   parent_stack;
+            parent_stack.push(-1);
 
-            for(uint32 i = 1; i < DebugEvent_Index; i++)
+
+            for(uint32 i = 0 ; i < kTotalRecordCount; i++)
+            {
+                *debug.getEventSnapshot(i, frame_index) = frame_event_block();
+            }
+
+            for(uint32 i = 0; i < DebugEvent_Index; i++)
             {
                 debug_event* event = &DebugEventList[i];
                 switch(event->type)
@@ -980,50 +1011,44 @@ void collateDebugEventFrameData(DebugStateInformation &debug)
                     case DEBUG_EVENT_TIMED_BLOCK_START:
                     {
                         bool alreadyExists = false;
-                        for(uint32 x=0; x < target->children.size(); x++)
+                        for(uint32 x=0; x < current_event_index; x++)
                         {
-                            if(target->children[x]->record_id == event->record_id)
+                            if(debug.getEventSnapshot(current_event_index, frame_index)->record_id == event->record_id)
                             {
-                                target = target->children[x];
-                                target->startClock = event->clock;
-                                target->hitCount  += event->hitCount;
+                                debug.getEventSnapshot(current_event_index, frame_index)->startClock = event->clock;
+                                debug.getEventSnapshot(current_event_index, frame_index)->hitCount  += event->hitCount;
                                 alreadyExists=true;
 
                                 current_depth++;
+                                parent_stack.push(current_event_index);
                                 break;
                             }
                         }
 
                         if(!alreadyExists)
                         {
-                            frame_event_block* new_target = new frame_event_block();
-                            target->children.push_back(new_target);
-                            new_target->parent = target;
-                            target = new_target;
-
-                            target->record_id  = event->record_id;
-                            target->startClock = event->clock;
-                            target->hitCount  += event->hitCount;
+                            debug.getEventSnapshot(current_event_index, frame_index)->record_id  = event->record_id;
+                            debug.getEventSnapshot(current_event_index, frame_index)->parent     = parent_stack.top();
+                            debug.getEventSnapshot(current_event_index, frame_index)->startClock = event->clock;
+                            debug.getEventSnapshot(current_event_index, frame_index)->hitCount  += event->hitCount;
+                            debug.getEventSnapshot(current_event_index, frame_index)->depth      = current_depth;
 
                             current_depth++;
+                            parent_stack.push(current_event_index);
                         }
+                        current_event_index++;
+
+                        if(debug.debugSnapshotMaxDepth < current_depth) debug.debugSnapshotMaxDepth = current_depth;
                     }break;
 
                     case DEBUG_EVENT_TIMED_BLOCK_END:
                     {
-                        target->clock_time += event->clock-target->startClock;
-                        if(target->parent != nullptr)
-                        {
-                            target = target->parent;
-                            current_depth--;
-                        }
+                        debug.getEventSnapshot(parent_stack.top(), frame_index)->clock_time += event->clock-debug.getEventSnapshot(parent_stack.top(), frame_index)->startClock;
+                        current_depth--;
+                        parent_stack.pop();
                     }break;
                 }
-                if(current_depth > frame->max_depth)
-                    frame->max_depth = current_depth;
             }
-
-            //sortDebugEventFrame(frame->main_event.children[0]);
         }
 
         debug.debugSnapshotIndex++;
@@ -1046,6 +1071,381 @@ void collateDebugEventFrameData(DebugStateInformation &debug)
             node->option_list.option_colour[i+1] = (kDebug_ColourPalatte[i]);
         }
     }
+}
+
+void ShowColorEdit(const char* text, sf::Color &colour, ImGuiColorEditFlags flags=0)
+{
+    static ImVec4 colourChange;
+    colourChange = ImVec4(colour);
+    ImGui::ColorEdit4(text, (float*)&colourChange, flags);
+    colour = (sf::Color)colourChange;
+}
+
+void ShowDebugWindow_Map(DebugStateInformation &debug, bool *p_open)
+{
+    static bool p_map_open = true;
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_ShowBorders;
+    //ImGui::SetNextWindowSize(ImVec2(550,680), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Map Settings", p_open, window_flags))
+    {
+        // Early out if the window is collapsed, as an optimization.
+        ImGui::End();
+        return;
+    }
+
+    if(ImGui::CollapsingHeader("Debug Rendering"))
+    {
+        static string    string_InfoText = "";
+        static ImVec4    colour_InfoText;
+
+        if(ImGui::Button("Load Colours"))
+        {
+            Json::Value root = readJsonFile(kDataFile_debug_colours);
+            if(!loadLinearJsonIntoMemory(root, (byte*)(&debug.colour), kDataFormat_debug_colours, true))
+            {
+                string_InfoText = "Failed to load file!";
+                colour_InfoText = ImVec4(0.75, 0.24, 0.13, 1.0);
+            }else{
+                string_InfoText = "File loaded successfully";
+                colour_InfoText = ImVec4(0.32, 0.75, 0.19, 1.0);
+            }
+        }
+
+        ImGui::SameLine();
+        if(ImGui::Button("Save Colours"))
+        {
+            if(!saveLinearJsonFileFromMemory(kDataFile_debug_colours, (byte*)(&debug.colour), kDataFormat_debug_colours))
+            {
+                string_InfoText = "Failed to save to file!";
+                colour_InfoText = ImVec4(0.75, 0.24, 0.13, 1.0);
+            }else{
+                string_InfoText = "Style saved successfully";
+                colour_InfoText = ImVec4(0.32, 0.75, 0.19, 1.0);
+            }
+        }
+        ImGui::TextColored(colour_InfoText, "%s",string_InfoText.c_str());
+
+        ImGui::Checkbox("##Show_Room_Boundaries", &debug.display_RoomBoundaries); ImGui::SameLine();
+        ShowColorEdit("Room Boundary Colour", debug.colour.roomBoundaries, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel); ImGui::SameLine();
+        ImGui::TextUnformatted("Show Room Boundaries");
+
+
+        ImGui::Checkbox("##Show_Room_Connections", &debug.display_RoomConnections); ImGui::SameLine();
+        ShowColorEdit("Room Connection In Colour", debug.colour.roomConnectionHighlight, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel); ImGui::SameLine();
+        ShowColorEdit("Room Connection Out Colour", debug.colour.roomConnections, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel); ImGui::SameLine();
+        ImGui::TextUnformatted("Show Room Connections");
+
+
+        ImGui::Checkbox("##Show_Room_Graph", &debug.display_RoomGraph); ImGui::SameLine();
+        ShowColorEdit("Room Graph Colour", debug.colour.roomGraph, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel); ImGui::SameLine();
+        ImGui::TextUnformatted("Show Room Graph");
+
+        ImGui::Checkbox("##Show_Room_ID", &debug.display_RoomID); ImGui::SameLine();
+        ShowColorEdit("Room ID Text Colour", debug.colour.roomid, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel); ImGui::SameLine();
+        ImGui::TextUnformatted("Show Room ID");
+
+
+        ImGui::Checkbox("##Show_Tilegrid", &debug.display_TileGrid); ImGui::SameLine();
+        ShowColorEdit("Tilegrid Colour", debug.colour.tilegrid, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel); ImGui::SameLine();
+        ImGui::TextUnformatted("Show Tile Grid");
+
+
+        ImGui::Separator();
+        ImGui::Checkbox("Show Tile IDs", &debug.display_TileID);
+        ImGui::Checkbox("Show Tile AOs", &debug.display_TileAO);
+
+    }
+
+    ImGui::End();
+}
+
+void ShowDebugWindow_Entities(DebugStateInformation &debug, bool *p_open)
+{
+    static bool p_entity_open = true;
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_ShowBorders;
+    //ImGui::SetNextWindowSize(ImVec2(550,680), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Entity Settings", p_open, window_flags))
+    {
+        // Early out if the window is collapsed, as an optimization.
+        ImGui::End();
+        return;
+    }
+
+    ImGui::End();
+}
+
+void ShowDebugWindow_Items(DebugStateInformation &debug, bool *p_open)
+{
+    static bool p_item_open = true;
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_ShowBorders;
+    //ImGui::SetNextWindowSize(ImVec2(550,680), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Item Settings", p_open, window_flags))
+    {
+        // Early out if the window is collapsed, as an optimization.
+        ImGui::End();
+        return;
+    }
+
+    static uint32 selected_item  = 0;
+    static bool   isItemSelected = false;
+    static bool   item_changed   = false;
+
+    if(ImGui::Button("Reload Item Config"))
+    {
+        debug.game_itemManager->item_list.clear();
+        debug.game_itemManager->item_count=0;
+        debug.game_itemManager->item_current_index=0;
+        loadItemListFromConfigFile(*debug.game_itemManager, "Resources/Config/item_list.json", true);
+
+        isItemSelected=false;
+    }
+    ImGui::Columns(2, NULL, true);
+
+
+    ImGui::BeginChild("ItemList", ImVec2(0,300), true);
+
+        for (map<uint32, game_item>::iterator it=debug.game_itemManager->item_list.begin(); it!=debug.game_itemManager->item_list.end(); it++)
+        {
+            const bool selected = (isItemSelected && it->first==selected_item);
+            ImGui::PushID(it->first);
+            char* buffer = new char[128];
+            ImFormatString(buffer, 128, "%3d %-s", it->first, it->second.name.c_str());
+            if(ImGui::Selectable(buffer, selected))
+            {
+                selected_item = it->first;
+                isItemSelected=true;
+                item_changed=true;
+            }
+            ImGui::PopID();
+        }
+
+    ImGui::EndChild();
+    ImGui::NextColumn();
+    ImGui::BeginChild("ItemPropertyEditor", ImVec2(0,300), true);
+    if(isItemSelected)
+    {
+        static char* name_buffer = new char[128];
+        static char* desc_buffer = new char[512];
+
+        if(item_changed)
+        {
+            str2char(debug.game_itemManager->item_list[selected_item].name, name_buffer, 128);
+            str2char(debug.game_itemManager->item_list[selected_item].description, desc_buffer, 512);
+        }
+
+
+        ImGui::Text("Name:");
+        if(ImGui::InputText("##Name", name_buffer, 128))
+        {
+            debug.game_itemManager->item_list[selected_item].name=name_buffer;
+        }
+
+        ImGui::Text("Description:");
+        if(ImGui::InputTextMultiline("##Description", desc_buffer, 512, ImVec2(ImGui::GetContentRegionAvailWidth(),100)))
+        {
+            debug.game_itemManager->item_list[selected_item].description=desc_buffer;
+        }
+
+
+    }else{
+        ImGui::Text("Select an item to edit it.");
+    }
+
+    item_changed=false;
+
+    ImGui::EndChild();
+    ImGui::End();
+}
+
+void ShowDebugWindow_Resources(DebugStateInformation &debug, bool *p_open)
+{
+    static bool p_resources_open = true;
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_ShowBorders;
+    //ImGui::SetNextWindowSize(ImVec2(550,680), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Resource Settings", p_open, window_flags))
+    {
+        // Early out if the window is collapsed, as an optimization.
+        ImGui::End();
+        return;
+    }
+
+    ImGui::End();
+}
+
+void ShowDebugWindow_System(DebugStateInformation &debug, bool *p_open)
+{
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_ShowBorders;
+    //ImGui::SetNextWindowSize(ImVec2(550,680), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("System Settings", p_open, window_flags))
+    {
+        // Early out if the window is collapsed, as an optimization.
+        ImGui::End();
+        return;
+    }
+
+    //ImGui::PlotLines("Framerate", )
+
+    ImGui::End();
+}
+
+
+void ShowDebugWindow_ConfigEditor(DebugStateInformation &debug, bool *p_open)
+{
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_ShowBorders;
+    if (!ImGui::Begin("Config Editor", p_open, window_flags))
+    {
+        // Early out if the window is collapsed, as an optimization.
+        ImGui::End();
+        return;
+    }
+
+    static char* filename_buffer = new char[128]();
+    ImGui::InputText("##Filename", filename_buffer, 128); ImGui::SameLine();
+    static ImGuiFs::Dialog file_dialog;
+    file_dialog.chooseFileDialog(ImGui::Button("..."), "./Resources/Config/", ".json;", "Pick a config file");
+    strcpy(filename_buffer, file_dialog.getChosenPath());
+    ImGui::SameLine();
+
+    static string filename_loaded;
+    static char* file_buffer = new char[4096]();
+    static bool  needs_saved = false;
+
+    static GUI_WarningText warningText;
+
+
+
+
+    if(ImGui::Button("Load"))
+    {
+        string file = fastReadFile(string(filename_buffer));
+        if(file.length() < 4096)
+        {
+            str2char(file, file_buffer, 4096);
+            filename_loaded=filename_buffer;
+            warningText.alert("File loaded successfully", sf::Color(0.32*255, 0.75*255, 0.19*255));
+            needs_saved=false;
+        }else{
+            warningText.alert("File is too big!(>4Kb)", sf::Color(0.75*255, 0.24*255, 0.13*255));
+        }
+    }
+
+    warningText.show();
+
+    if(!needs_saved) ImGui::GetStyle().Alpha=0.2;
+
+    if(ImGui::ButtonEx("Save Changes", ImVec2(0,0), ImGuiButtonFlags_Disabled&needs_saved) && needs_saved)
+    {
+        ofstream file_id;
+        file_id.open(filename_buffer);
+
+        file_id << string(file_buffer);
+
+        file_id.close();
+
+        needs_saved=false;
+    }
+
+
+    ImGui::GetStyle().Alpha=1.0;
+
+    ImGuiInputTextFlags input_flags = (filename_loaded.length() != 0) ? 0 : ImGuiInputTextFlags_ReadOnly;
+
+    ImGui::BeginChild("File Editor", ImVec2(ImGui::GetContentRegionAvailWidth(),0), true);
+
+    if(ImGui::InputTextMultiline("##File Edit Region", file_buffer, 1024, ImVec2(ImGui::GetContentRegionAvailWidth(),ImGui::GetContentRegionAvail().y), input_flags | ImGuiInputTextFlags_AllowTabInput))
+    {
+        needs_saved=true;
+    }
+
+    ImGui::EndChild();
+
+
+
+
+    ImGui::End();
+}
+
+
+void ShowDebugWindows(DebugStateInformation &debug)
+{
+    static bool map_window_open = false;
+    static bool entity_window_open = false;
+    static bool item_window_open = false;
+    static bool resource_window_open = false;
+    static bool system_window_open = false;
+
+    static bool configeditor_window_open = false;
+
+    static bool metrics_window_open = false;
+    static bool style_window_open = false;
+    static bool demo_window_open = false;
+
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("Debug"))
+        {
+            if (ImGui::MenuItem("Map"))
+            {
+                map_window_open=true;
+            }
+
+            if (ImGui::MenuItem("Entities"))
+            {
+                 entity_window_open=true;
+            }
+
+            if (ImGui::MenuItem("Items"))
+            {
+                 item_window_open=true;
+            }
+
+            if (ImGui::MenuItem("Resources"))
+            {
+                resource_window_open=true;
+            }
+
+            if (ImGui::MenuItem("System"))
+            {
+                system_window_open=true;
+            }
+
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Tools"))
+        {
+            if (ImGui::MenuItem("Config Editor"))
+            {
+                configeditor_window_open=true;
+            }
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Help"))
+        {
+            ImGui::MenuItem("Metrics", NULL, &metrics_window_open);
+            ImGui::MenuItem("Style Editor", NULL, &style_window_open);
+            ImGui::MenuItem("Demo", NULL, &demo_window_open);
+
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
+
+    static bool test=true;
+
+
+    if(map_window_open)             ShowDebugWindow_Map(debug,       &map_window_open);
+    if(entity_window_open)          ShowDebugWindow_Entities(debug,  &entity_window_open);
+    if(item_window_open)            ShowDebugWindow_Items(debug,     &item_window_open);
+    if(resource_window_open)        ShowDebugWindow_Resources(debug, &resource_window_open);
+    if(system_window_open)          ShowDebugWindow_System(debug,    &system_window_open);
+
+    if(configeditor_window_open)    ShowDebugWindow_ConfigEditor(debug,    &configeditor_window_open);
+
+    if(metrics_window_open)         ImGui::ShowMetricsWindow(&metrics_window_open);
+    if(style_window_open)           ImGui::ShowStyleEditor(&ImGui::GetStyle());
+    if(demo_window_open)            ImGui::ShowTestWindow(&demo_window_open);
 }
 
 

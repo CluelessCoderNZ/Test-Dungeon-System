@@ -2,6 +2,7 @@
 #define RESOURCE_MANAGER_H
 #include "game_consts.h"
 #include <cstring>
+#include <SFML/Graphics.hpp>
 
 
 #define kResourceTypeCount 3

@@ -5,7 +5,6 @@
 #include <vector>
 #include "game_consts.h"
 #include "resource_manager.h"
-#include "resource_manager.cpp"
 
 using namespace std;
 

@@ -1,5 +1,6 @@
 #ifndef GAME_TIMER_CPP
 #define GAME_TIMER_CPP
+#include "game_timer.h"
 
 GameTimer::GameTimer()
 {

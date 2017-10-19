@@ -6,7 +6,7 @@ PROGRAM_FILENAME="program.out"
 ENTRY_POINT="main.cpp"
 COMMON_INCLUDE_DIR=""
 COMMON_LINKER_DIR="-L/usr/local/lib"
-COMMON_LINKER_FILES="-lsfml-graphics -lsfml-window -lsfml-system -lsfml-network"
+COMMON_LINKER_FILES="-lsfml-graphics -lsfml-window -lsfml-system -lsfml-network -lglut -lGL"
 COMMON_OPTIONS="-std=c++11 -DDEBUG_TOGGLE -Wreturn-type"
 
 BUILD_AND_RUN=0

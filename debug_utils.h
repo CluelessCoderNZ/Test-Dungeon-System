@@ -5,18 +5,26 @@
 #include <typeinfo>
 #include <bitset>
 #include <sstream>
-#include "entity.h"
-#include "game_platform.h"
-#include "tool_functions.h"
+#include <utility>
 #include <time.h>
+#include "entity.h"
+#include "tool_functions.h"
+#include "IMGUI/imgui.h"
+#include "IMGUI/imgui-SFML.h"
+#include "IMGUI/imgui_internal.h"
+#include <addons/imguifilesystem/imguifilesystem.h>
+#include <addons/imguicodeeditor/imguicodeeditor.h>
+#include "game_item.h"
+#include "debug_ui.h"
+
 
 using namespace std;
 
 #define TOKENPASTE_(x, y) x ## y
 #define TOKENPASTE(x, y) TOKENPASTE_(x, y)
 
-#define TIMED_BLOCK(x) timed_block TOKENPASTE(TimedBlock_, __LINE__)(__COUNTER__, __FILE__, __LINE__, __FUNCTION__, x);
-#define NAMED_BLOCK(y, x) timed_block TOKENPASTE(TimedBlock_, __LINE__)(__COUNTER__, __FILE__, __LINE__, y, x);
+#define TIMED_BLOCK(x, c) timed_block TOKENPASTE(TimedBlock_, __LINE__)( __FILE__, __LINE__, __FUNCTION__, c, x);
+#define NAMED_BLOCK(y, x, c) timed_block TOKENPASTE(TimedBlock_, __LINE__)( __FILE__, __LINE__, y, c, x);
 
 
 static inline uint64 rdtsc()
@@ -24,7 +32,7 @@ static inline uint64 rdtsc()
     uint64 lo,hi;
     __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
     return ((uint64)hi << 32) | lo;
-}
+};
 
 enum debug_event_type
 {
@@ -47,17 +55,17 @@ struct debug_profile_record
     uint32 lineNumber;
 };
 
-extern debug_profile_record DebugProfileRecordArray[];
-extern const uint32 kTotalRecordCount;
+const uint32 kTotalRecordCount = 15;
+static debug_profile_record DebugProfileRecordArray[kTotalRecordCount];
 
 const uint32 kMaxEventCount = (16 * 65536);
-debug_event DebugEventList[kMaxEventCount];
-uint32 DebugEvent_Index = 0;
+static debug_event DebugEventList[kMaxEventCount];
+static uint32 DebugEvent_Index = 0;
 
 struct timed_block
 {
     uint32 record_id=0;
-    timed_block(uint32 counter, string filename, uint32 linenumber, string functionname, uint32 hitcount = 1)
+    timed_block(string filename, uint32 linenumber, string functionname, uint32 counter, uint32 hitcount = 1)
     {
         debug_profile_record* Record;
         Record = DebugProfileRecordArray + counter;
@@ -94,37 +102,8 @@ struct frame_event_block
     uint64 clock_time = 0;
     uint32 hitCount = 0;
 
-    vector<frame_event_block*> children;
-    frame_event_block* parent = nullptr;
-
-    ~frame_event_block()
-    {
-        for(uint32 i = 0; i < children.size(); i++)
-        {
-            delete children[i];
-        }
-    }
-    frame_event_block* find(uint16 find_id)
-    {
-        if(record_id==find_id)
-        {
-            return this;
-        }else{
-            for(uint32 i = 0; i < children.size(); i++)
-            {
-                frame_event_block* result = children[i]->find(find_id);
-                if(result!=nullptr) return result;
-            }
-        }
-
-        return nullptr;
-    }
-};
-
-struct frame_event_summary
-{
-    frame_event_block main_event;
-    uint32 max_depth=1;
+    uint32 depth  = 0;
+    uint32 parent = 0;
 };
 
 
@@ -447,16 +426,32 @@ struct debug_frame_graph
     uint64            frameLastUpdated=0;
 };
 
+
+const string kDataFile_debug_colours = "Resources/Config/Debug_Data/debug_style.json";
+const string kDataFormat_debug_colours = "c%Additional_Text_Colour;c%Room_Boundary_Colour;c%Room_Graph_Colour;c%Tilegrid_Colour;c%RoomID_Text_Colour;c%Room_Connections_Colour;c%Room_Connections_Highlight";
+struct debug_colours
+{
+    sf::Color AdditionalInfo             = sf::Color::Yellow;
+    sf::Color roomBoundaries             = sf::Color::Green;
+    sf::Color roomGraph                  = sf::Color::Cyan;
+    sf::Color tilegrid                   = sf::Color(0,50,0);
+    sf::Color roomid                     = sf::Color(180,0,255);
+    sf::Color roomConnections            = sf::Color::Red;
+    sf::Color roomConnectionHighlight    = sf::Color(0,0,255);
+
+    sf::Color roomDifficulty             = sf::Color::Red;
+};
+
 struct DebugStateInformation
 {
     bool     isEnabled = false;
     DebugMemoryAnalyzerState memoryAnalyzer;
     DebugMenuUIState         ui;
 
+    ItemManager* game_itemManager=nullptr;
+
     sf::Font font;
     string   additionalInfo;
-
-    GameState *gamestate=nullptr;
 
     // Trigger Flag
     bool           trigger_reloadItemList=false;
@@ -496,27 +491,36 @@ struct DebugStateInformation
     uint64 overallFrameIndex        = 0;
     uint32 kDebugRecordSnapshotSize = 180;
     uint32 debugSnapshotIndex=0;
-    frame_event_summary debugEventSnapshotArray[180];
+    uint32 debugSnapshotMaxDepth=0;
+    frame_event_block* debugEventSnapshotArray = nullptr;
+    frame_event_block* getEventSnapshot(uint32 event_id, int32 slice)
+    {
+        assert(debugEventSnapshotArray!=nullptr);
+        return debugEventSnapshotArray + event_id + slice*kTotalRecordCount;
+    }
     debug_frame_record debugFrameSnapshotArray[180];
     real32   lastRecordedFrameRate=60;
     int32    mouse_hovered_room_id = -1;
+    sf::Clock  gameActiveTimer;
 
 
     vector<debug_frame_graph> frameGraph_list;
 
     // UI Settings
-    sf::Color colour_AdditionalInfo             = sf::Color::Yellow;
-    sf::Color colour_roomBoundaries             = sf::Color::Green;
-    sf::Color colour_roomGraph                  = sf::Color::Cyan;
-    sf::Color colour_tilegrid                   = sf::Color(0,50,0);
-    sf::Color colour_roomid                     = sf::Color(180,0,255);
-    sf::Color colour_roomConnections            = sf::Color::Red;
-    sf::Color colour_roomConnectionHighlight    = sf::Color(0,0,255);
-    sf::Color colour_roomDifficulty             = sf::Color::Red;
+    debug_colours colour;
+
 };
 
 void initDebugState(DebugStateInformation &debug);
 void updateDebugMemoryAnalyzer(DebugStateInformation &debug, GameMap &map, InputState &input);
 void collateDebugEventFrameData(DebugStateInformation &debug);
+
+void ShowDebugWindow_Map(DebugStateInformation &debug);
+void ShowDebugWindow_Entities(DebugStateInformation &debug);
+void ShowDebugWindow_Items(DebugStateInformation &debug);
+void ShowDebugWindow_Resources(DebugStateInformation &debug);
+void ShowDebugWindow_System(DebugStateInformation &debug);
+
+void ShowDebugWindows(DebugStateInformation &debug);
 
 #endif /* end of include guard: DEBUG_UTILS_H */

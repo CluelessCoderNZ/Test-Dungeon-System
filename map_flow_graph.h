@@ -4,7 +4,6 @@
 #include <iostream>
 #include <vector>
 #include "tool_functions.h"
-#include "tool_functions.cpp"
 
 using namespace std;
 

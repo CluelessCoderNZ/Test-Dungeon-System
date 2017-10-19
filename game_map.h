@@ -10,17 +10,13 @@
 #include "game_consts.h"
 #include "game_tileset.h"
 #include "tool_functions.h"
-#include "tool_functions.cpp"
 #include "math_utils.h"
-#include "math_utils.cpp"
 #include "entity.h"
 #include "map_flow_graph.h"
-#include "map_flow_graph.cpp"
-
 #include "delaunay/delaunay.h"
-#include "delaunay/delaunay.cpp"
 
 struct Entity_Reference;
+struct GameMap;
 
 using namespace std;
 
@@ -107,7 +103,7 @@ const sf::Vector2i kTileNeighbourDirectionNormals[9] =
 
 struct MapTile
 {
-    byte          tileID;
+    byte          tileID = 0;
     byte          AO = (byte)TILE_NONE;
 };
 
@@ -124,7 +120,7 @@ struct MapRoom
 
     std::vector<Entity_Reference>   entity_list;
 
-    inline MapTile getTile(uint32 x, uint32 y)
+    inline MapTile getTile(int32 x, int32 y)
     {
         if(x >= bounds.width || y >= bounds.height)
             return MapTile();

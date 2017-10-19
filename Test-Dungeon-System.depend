@@ -1,0 +1,1169 @@
+# depslib dependency file v1.0
+1508386979 source:/home/connor/Documents/Test-Dungeon-System TEMP/main.cpp
+	<iostream>
+	<SFML/Graphics.hpp>
+	"game_platform.h"
+	"debug_utils.h"
+	"resource_manager.h"
+	"IMGUI/imgui.h"
+	"IMGUI/imgui-SFML.h"
+
+1508051048 /home/connor/Documents/Test-Dungeon-System TEMP/game_platform.h
+	<iostream>
+	<cmath>
+	<SFML/Graphics.hpp>
+	"game_consts.h"
+	"game_input.h"
+	"entity.h"
+	"game_map.h"
+	"game_tileset.h"
+	"math_utils.h"
+	"debug_utils.h"
+	"game_timer.h"
+	"game_item.h"
+
+1508051552 /home/connor/Documents/Test-Dungeon-System TEMP/game_consts.h
+	<iostream>
+	<assert.h>
+
+1508143318 /home/connor/Documents/Test-Dungeon-System TEMP/game_input.h
+	"game_consts.h"
+	<SFML/Window.hpp>
+
+1508144053 /home/connor/Documents/Test-Dungeon-System TEMP/entity.h
+	<vector>
+	<unordered_map>
+	<SFML/Graphics.hpp>
+	<iostream>
+	"game_consts.h"
+	"game_map.h"
+	"math_utils.h"
+	"resource_manager.h"
+	"game_animation.h"
+	"game_input.h"
+
+1508385404 /home/connor/Documents/Test-Dungeon-System TEMP/game_map.h
+	<vector>
+	<map>
+	<iostream>
+	<assert.h>
+	<sstream>
+	<limits>
+	<SFML/Graphics.hpp>
+	"game_consts.h"
+	"game_tileset.h"
+	"tool_functions.h"
+	"math_utils.h"
+	"entity.h"
+	"map_flow_graph.h"
+	"delaunay/delaunay.h"
+
+1508049974 /home/connor/Documents/Test-Dungeon-System TEMP/game_tileset.h
+	<iostream>
+	<SFML/Graphics.hpp>
+	<vector>
+	"game_consts.h"
+	"resource_manager.h"
+
+1508051510 /home/connor/Documents/Test-Dungeon-System TEMP/resource_manager.h
+	"game_consts.h"
+	<cstring>
+	<SFML/Graphics.hpp>
+
+1508391296 /home/connor/Documents/Test-Dungeon-System TEMP/tool_functions.h
+	<fstream>
+	<sstream>
+	<iostream>
+	<typeinfo>
+	<bitset>
+	<iomanip>
+	"json/json.h"
+	"game_consts.h"
+	"math_utils.h"
+
+1483510260 /home/connor/Documents/Test-Dungeon-System TEMP/json/json.h
+	<stddef.h>
+	<string>
+	<stdint.h>
+	<cpptl/config.h>
+	"version.h"
+	"allocator.h"
+	"config.h"
+	"forwards.h"
+	"forwards.h"
+	<string>
+	<vector>
+	<exception>
+	<map>
+	<cpptl/smallmap.h>
+	<cpptl/forwards.h>
+	"features.h"
+	"value.h"
+	<deque>
+	<iosfwd>
+	<stack>
+	<string>
+	<istream>
+	"value.h"
+	<vector>
+	<string>
+	<ostream>
+	<stdlib.h>
+	<sstream>
+	"config.h"
+
+1490076117 /home/connor/Documents/Test-Dungeon-System TEMP/math_utils.h
+	<SFML/Graphics.hpp>
+	<random>
+	<cmath>
+	"game_consts.h"
+
+1508050017 /home/connor/Documents/Test-Dungeon-System TEMP/map_flow_graph.h
+	<SFML/Graphics.hpp>
+	<iostream>
+	<vector>
+	"tool_functions.h"
+
+1498665002 /home/connor/Documents/Test-Dungeon-System TEMP/delaunay/delaunay.h
+	"vector2.h"
+	"edge.h"
+	"triangle.h"
+	<vector>
+	<algorithm>
+
+1498665002 /home/connor/Documents/Test-Dungeon-System TEMP/delaunay/vector2.h
+	<iostream>
+	<cmath>
+
+1498665002 /home/connor/Documents/Test-Dungeon-System TEMP/delaunay/triangle.h
+	"vector2.h"
+	"edge.h"
+	<assert.h>
+	<math.h>
+
+1498665002 /home/connor/Documents/Test-Dungeon-System TEMP/delaunay/edge.h
+	"vector2.h"
+
+1508142318 /home/connor/Documents/Test-Dungeon-System TEMP/delaunay/triangle.cpp
+	"triangle.h"
+	<assert.h>
+	<math.h>
+	"delaunay.h"
+
+1508143492 /home/connor/Documents/Test-Dungeon-System TEMP/game_animation.h
+	"game_timer.h"
+	"resource_manager.h"
+	"tool_functions.h"
+
+1508051482 /home/connor/Documents/Test-Dungeon-System TEMP/game_timer.h
+	<math.h>
+	"game_consts.h"
+
+1508049985 /home/connor/Documents/Test-Dungeon-System TEMP/game_timer.cpp
+	"game_timer.h"
+
+1508404236 /home/connor/Documents/Test-Dungeon-System TEMP/debug_utils.h
+	<SFML/Graphics.hpp>
+	<iostream>
+	<typeinfo>
+	<bitset>
+	<sstream>
+	<utility>
+	<time.h>
+	"entity.h"
+	"tool_functions.h"
+	"IMGUI/imgui.h"
+	"IMGUI/imgui-SFML.h"
+	"IMGUI/imgui_internal.h"
+	<addons/imguifilesystem/imguifilesystem.h>
+	<addons/imguicodeeditor/imguicodeeditor.h>
+	"game_item.h"
+	"debug_ui.h"
+
+1508143264 /home/connor/Documents/Test-Dungeon-System TEMP/game_item.h
+	"game_consts.h"
+	"resource_manager.h"
+	"tool_functions.h"
+	"math_utils.h"
+
+1508405771 source:/home/connor/Documents/Test-Dungeon-System TEMP/debug_utils.cpp
+	"debug_utils.h"
+
+1504275072 source:/home/connor/Documents/Test-Dungeon-System TEMP/entity.cpp
+	"entity.h"
+
+1504273737 source:/home/connor/Documents/Test-Dungeon-System TEMP/game_animation.cpp
+	"game_animation.h"
+
+1508049880 source:/home/connor/Documents/Test-Dungeon-System TEMP/game_input.cpp
+	"game_input.h"
+
+1483510260 source:/home/connor/Documents/Test-Dungeon-System TEMP/delaunay/delaunay.cpp
+	"delaunay.h"
+	<algorithm>
+
+1508143270 source:/home/connor/Documents/Test-Dungeon-System TEMP/game_item.cpp
+	"game_item.h"
+
+1508304614 source:/home/connor/Documents/Test-Dungeon-System TEMP/game_map.cpp
+	"game_map.h"
+
+1508400479 source:/home/connor/Documents/Test-Dungeon-System TEMP/game_platform.cpp
+	"game_platform.h"
+
+1504267224 source:/home/connor/Documents/Test-Dungeon-System TEMP/game_tileset.cpp
+	"game_tileset.h"
+
+1508049985 source:/home/connor/Documents/Test-Dungeon-System TEMP/game_timer.cpp
+	"game_timer.h"
+
+1504252736 source:/home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/imgui-SFML.cpp
+	"imgui-SFML.h"
+	<imgui.h>
+	<SFML/OpenGL.hpp>
+	<SFML/Graphics/Color.hpp>
+	<SFML/Graphics/RenderTarget.hpp>
+	<SFML/Graphics/RenderWindow.hpp>
+	<SFML/Graphics/Sprite.hpp>
+	<SFML/Graphics/Texture.hpp>
+	<SFML/Window/Event.hpp>
+	<SFML/Window/Window.hpp>
+	<cmath>
+	<cstddef>
+	<cassert>
+	<SFML/Window/Touch.hpp>
+	<jni.h>
+	<android/native_activity.h>
+	<SFML/System/NativeActivity.hpp>
+
+1504252736 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/imgui-SFML.h
+	<SFML/System/Vector2.hpp>
+	<SFML/Graphics/Rect.hpp>
+	<SFML/Graphics/Color.hpp>
+	<SFML/System/Time.hpp>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/imgui.h
+	"imconfig.h"
+	<float.h>
+	<stdarg.h>
+	<stddef.h>
+	<string.h>
+	<assert.h>
+	"imgui_user.h"
+
+1507980482 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/imconfig.h
+	<SFML/System/Vector2.hpp>
+	<SFML/Graphics/Color.hpp>
+
+1508326392 source:/home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/imgui.cpp
+	"imgui.h"
+	"imgui_internal.h"
+	<ctype.h>
+	<stdlib.h>
+	<stdio.h>
+	<limits.h>
+	<stddef.h>
+	<stdint.h>
+	"stb_textedit.h"
+	<windows.h>
+	<imm.h>
+	"imgui_user.inl"
+
+1508396388 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/imgui_internal.h
+	<stdio.h>
+	<math.h>
+	"stb_textedit.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/stb_textedit.h
+	<string.h>
+
+1508326392 source:/home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/imgui_demo.cpp
+	"imgui.h"
+	<ctype.h>
+	<math.h>
+	<stdio.h>
+	<stdlib.h>
+	<stddef.h>
+	<stdint.h>
+
+1508326392 source:/home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/imgui_draw.cpp
+	"imgui.h"
+	"imgui_internal.h"
+	<stdio.h>
+	<malloc.h>
+	<alloca.h>
+	<stdlib.h>
+	"stb_rect_pack.h"
+	"stb_truetype.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/stb_rect_pack.h
+	<stdlib.h>
+	<assert.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/stb_truetype.h
+	"stb_truetype.h"
+	<stdio.h>
+	"stb_truetype.h"
+	<math.h>
+	<math.h>
+	<math.h>
+	<stdlib.h>
+	<assert.h>
+	<string.h>
+	<memory.h>
+
+1483510259 source:/home/connor/Documents/Test-Dungeon-System TEMP/jsoncpp.cpp
+	"json/json.h"
+	<clocale>
+	<json/assertions.h>
+	<json/reader.h>
+	<json/value.h>
+	"json_tool.h"
+	<utility>
+	<cstdio>
+	<cassert>
+	<cstring>
+	<istream>
+	<sstream>
+	<memory>
+	<set>
+	<limits>
+	<json/assertions.h>
+	<json/value.h>
+	<json/writer.h>
+	<math.h>
+	<sstream>
+	<utility>
+	<cstring>
+	<cassert>
+	<cpptl/conststring.h>
+	<cstddef>
+	<algorithm>
+	"json_valueiterator.inl"
+	<json/writer.h>
+	"json_tool.h"
+	<iomanip>
+	<memory>
+	<sstream>
+	<utility>
+	<set>
+	<cassert>
+	<cstring>
+	<cstdio>
+	<float.h>
+	<ieeefp.h>
+	<math.h>
+	<math.h>
+	<cmath>
+	<float.h>
+
+1484030086 source:/home/connor/Documents/Test-Dungeon-System TEMP/map_flow_graph.cpp
+	"map_flow_graph.h"
+
+1490076117 source:/home/connor/Documents/Test-Dungeon-System TEMP/math_utils.cpp
+	"math_utils.h"
+
+1504268011 source:/home/connor/Documents/Test-Dungeon-System TEMP/resource_manager.cpp
+	"resource_manager.h"
+
+1508391418 source:/home/connor/Documents/Test-Dungeon-System TEMP/tool_functions.cpp
+	"tool_functions.h"
+
+1508144638 /home/connor/Documents/Test-Dungeon-System TEMP/z_compiledlast.cpp
+	"z_compiledlast.h"
+
+1508144711 /home/connor/Documents/Test-Dungeon-System TEMP/z_compiledlast.h
+	"debug_utils.h"
+
+1508144889 source:/home/connor/Documents/Test-Dungeon-System TEMP/z_compiledlast.cpp
+	"z_compiledlast.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/imgui_user.h
+	"./addons/imgui_user.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imgui_user.h
+	"./imguiyesaddons/imguibz2.h"
+	"./imguiyesaddons/imguistringifier.h"
+	"./imguiyesaddons/imguiemscriptenpersistentfolder.h"
+	"./imguistring/imguistring.h"
+	"./imguihelper/imguihelper.h"
+	"./imguitabwindow/imguitabwindow.h"
+	"./imguibindings/imguibindings.h"
+	"./imguilistview/imguilistview.h"
+	"./imguifilesystem/imguifilesystem.h"
+	"./imguitoolbar/imguitoolbar.h"
+	"./imguipanelmanager/imguipanelmanager.h"
+	"./imguivariouscontrols/imguivariouscontrols.h"
+	"./imguistyleserializer/imguistyleserializer.h"
+	"./imguidatechooser/imguidatechooser.h"
+	"./imguicodeeditor/imguicodeeditor.h"
+	"./imguinodegrapheditor/imguinodegrapheditor.h"
+	"./imguidock/imguidock.h"
+	"./imguiyesaddons/imguipdfviewer.h"
+	"./imguiyesaddons/imguisdf.h"
+	"./imguiyesaddons/imguitinyfiledialogs.h"
+	"./imguiyesaddons/imguisqlite3.h"
+	"./imguiyesaddons/imguiimageeditor.h"
+	"./imguiyesaddons/imguifreetype.h"
+	"./imguiyesaddons/imguisoloud.h"
+	"./imguiyesaddons/imguiminigames.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguibz2.h
+	<imgui.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguistringifier.h
+	<imgui.h>
+	"encodedOutput.inl"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguiemscriptenpersistentfolder.h
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguistring/imguistring.h
+	<imgui.h>
+	<string.h>
+	<string>
+	<vector>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguihelper/imguihelper.h
+	<imgui.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguitabwindow/imguitabwindow.h
+	<imgui.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguibindings/imguibindings.h
+	<imgui.h>
+	<windows.h>
+	<imm.h>
+	<OpenGL/glew.h>
+	<GL/glew.h>
+	<glad/glad.h>
+	<GL/gl3w.h>
+	<OpenGL/glut.h>
+	<GL/glut.h>
+	<OpenGL/freeglut_ext.h>
+	<GL/freeglut_ext.h>
+	<SDL2/SDL_opengl.h>
+	<SDL2/SDL_opengles2.h>
+	<SDL2/SDL.h>
+	<GLFW/glfw3.h>
+	<GLFW/glfw3native.h>
+	<d3dx9.h>
+	<OpenGL/glext.h>
+	<GL/glext.h>
+	<OpenGL/gl.h>
+	<GL/gl.h>
+	"./addons/imguibindings/ImImpl_Binding_Glfw3.h"
+	<string.h>
+	<stdio.h>
+	<float.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguibindings/ImImpl_Binding_Glfw3.h
+	"imguibindings.h"
+	<GLFW/glfw3native.h>
+	<X11/cursorfont.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguilistview/imguilistview.h
+	<imguilistview.h>
+	<imgui.h>
+	<stdio.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguifilesystem/imguifilesystem.h
+	"imguifilesystem.h"
+	<imgui.h>
+	<stdint.h>
+	<stdio.h>
+	<limits.h>
+	<linux/limits.h>
+	<windef.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguitoolbar/imguitoolbar.h
+	<imgui.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguipanelmanager/imguipanelmanager.h
+	"../imguitoolbar/imguitoolbar.h"
+	<imgui.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguivariouscontrols/imguivariouscontrols.h
+	<imgui.h>
+	"imguivariouscontrols.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguistyleserializer/imguistyleserializer.h
+	<imgui.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguidatechooser/imguidatechooser.h
+	<imgui.h>
+	"imguidatechooser.h"
+
+1508404537 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguicodeeditor/imguicodeeditor.h
+	<imgui.h>
+	"../imguistring/imguistring.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguinodegrapheditor/imguinodegrapheditor.h
+	<imgui.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguidock/imguidock.h
+	<imgui.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguipdfviewer.h
+	<imgui.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguisdf.h
+	<imgui.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguitinyfiledialogs.h
+	<stdio.h>
+	"tinyfiledialogs.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguisqlite3.h
+	<imgui.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguiimageeditor.h
+	<imgui.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguifreetype.h
+	<imgui.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguisoloud.h
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguiminigames.h
+	<imgui.h>
+
+1508326392 source:/home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguidatechooser/imguidatechooser.cpp
+	<imgui.h>
+	<imgui_internal.h>
+	"imguidatechooser.h"
+	<time.h>
+	<ctype.h>
+
+1508326392 source:/home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguidock/imguidock.cpp
+	<imgui.h>
+	<imgui_internal.h>
+	"imguidock.h"
+
+1508326392 source:/home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguifilesystem/imguifilesystem.cpp
+	<windows.h>
+	<imgui.h>
+	<imgui_internal.h>
+	"imguifilesystem.h"
+	<shlobj.h>
+	<unistd.h>
+	<pwd.h>
+	<stdint.h>
+	<stdio.h>
+	<limits.h>
+	<linux/limits.h>
+	<windef.h>
+	"dirent_portable.h"
+	<sys/stat.h>
+	<ctype.h>
+	<string.h>
+	<stdlib.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguifilesystem/dirent_portable.h
+	<dirent.h>
+	<stdio.h>
+	<stdarg.h>
+	<windef.h>
+	<winbase.h>
+	<wchar.h>
+	<string.h>
+	<stdlib.h>
+	<malloc.h>
+	<sys/types.h>
+	<sys/stat.h>
+	<errno.h>
+	<limits.h>
+
+1508326392 source:/home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguifilesystem/minizip/ioapi.c
+	"ioapi.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguifilesystem/minizip/ioapi.h
+	<stdio.h>
+	<stdlib.h>
+	<zlib.h>
+	<stdint.h>
+	"mz64conf.h"
+	"stdint.h"
+
+1508326392 source:/home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguifilesystem/minizip/unzip.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<zlib.h>
+	"unzip.h"
+	<stddef.h>
+	<string.h>
+	<stdlib.h>
+	<errno.h>
+	"crypt.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguifilesystem/minizip/unzip.h
+	<zlib.h>
+	"ioapi.h"
+	<bzlib.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguifilesystem/minizip/crypt.h
+
+1508326392 source:/home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguifilesystem/minizip/zip.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<time.h>
+	<zlib.h>
+	"zip.h"
+	<stddef.h>
+	<string.h>
+	<stdlib.h>
+	<errno.h>
+	"crypt.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguifilesystem/minizip/zip.h
+	<zlib.h>
+	"ioapi.h"
+	<bzlib.h>
+
+1508326392 source:/home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguihelper/imguihelper.cpp
+	<imgui.h>
+	<imgui_internal.h>
+	"imguihelper.h"
+	<shellapi.h>
+	<objbase.h>
+	<unistd.h>
+	<stdlib.h>
+	<imgui_internal.h>
+	<malloc.h>
+	<alloca.h>
+	<stdlib.h>
+	<stdio.h>
+	<zlib.h>
+
+1508326392 source:/home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguilistview/imguilistview.cpp
+	<imgui.h>
+	<imgui_internal.h>
+	"imguilistview.h"
+	<stdlib.h>
+
+1508326392 source:/home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguinodegrapheditor/imguinodegrapheditor.cpp
+	<imgui.h>
+	<imgui_internal.h>
+	<stdlib.h>
+	<malloc.h>
+	<alloca.h>
+	<stdlib.h>
+	"imguinodegrapheditor.h"
+	"../imguihelper/imguihelper.h"
+	"../imguihelper/imguihelper.h"
+	"../imguifilesystem/imguifilesystem.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/imgui_user.inl
+	"./addons/imgui_user.inl"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imgui_user.inl
+	"./imguistring/imguistring.cpp"
+	"./imguihelper/imguihelper.cpp"
+	"./imguitabwindow/imguitabwindow.cpp"
+	<emscripten.h>
+	"./imguibindings/ImImpl_Binding_Glut.h"
+	"./imguibindings/ImImpl_Binding_SDL2.h"
+	"./imguibindings/ImImpl_Binding_Glfw3.h"
+	"./imguibindings/ImImpl_Binding_Direct3D9.h"
+	"./imguibindings/ImImpl_Binding_WinAPI.h"
+	"./imguibindings/ImImpl_Binding_Glfw3.h"
+	"./imguibindings/imguibindings.cpp"
+	"./imguifilesystem/minizip/ioapi.c"
+	"./imguifilesystem/minizip/unzip.c"
+	"./imguifilesystem/minizip/zip.c"
+	"./imguiyesaddons/imguiemscriptenpersistentfolder.cpp"
+	"./imguilistview/imguilistview.cpp"
+	"./imguifilesystem/imguifilesystem.cpp"
+	"./imguitoolbar/imguitoolbar.cpp"
+	"./imguipanelmanager/imguipanelmanager.cpp"
+	"./imguivariouscontrols/imguivariouscontrols.cpp"
+	"./imguistyleserializer/imguistyleserializer.cpp"
+	"./imguidatechooser/imguidatechooser.cpp"
+	"./imguicodeeditor/imguicodeeditor.cpp"
+	"./imguiscintilla/imguiscintilla.cpp"
+	"./imguinodegrapheditor/imguinodegrapheditor.cpp"
+	"./imguidock/imguidock.cpp"
+	"./imguiyesaddons/imguibz2.cpp"
+	"./imguiyesaddons/imguistringifier.cpp"
+	"./imguiyesaddons/imguipdfviewer.cpp"
+	"./imguiyesaddons/imguisdf.cpp"
+	"./imguiyesaddons/imguitinyfiledialogs.cpp"
+	"./imguiyesaddons/imguisqlite3.cpp"
+	"./imguiyesaddons/imguiimageeditor.cpp"
+	"./imguiyesaddons/imguifreetype.cpp"
+	"./imguiyesaddons/imguiminigames.cpp"
+	"./imguiyesaddons/imguisoloud.cpp"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguistring/imguistring.cpp
+	<imgui.h>
+	<imgui_internal.h>
+	"imguistring.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguihelper/imguihelper.cpp
+	<imgui.h>
+	<imgui_internal.h>
+	"imguihelper.h"
+	<shellapi.h>
+	<objbase.h>
+	<unistd.h>
+	<stdlib.h>
+	<imgui_internal.h>
+	<malloc.h>
+	<alloca.h>
+	<stdlib.h>
+	<stdio.h>
+	<zlib.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguitabwindow/imguitabwindow.cpp
+	<imgui.h>
+	<imgui_internal.h>
+	"imguitabwindow.h"
+	<malloc.h>
+	<alloca.h>
+	<stdlib.h>
+	"../imguihelper/imguihelper.h"
+	"../imguihelper/imguihelper.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguibindings/ImImpl_Binding_Glut.h
+	"imguibindings.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguibindings/ImImpl_Binding_SDL2.h
+	"imguibindings.h"
+	<SDL2/SDL.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguibindings/ImImpl_Binding_Direct3D9.h
+	<tchar.h>
+	"imguibindings.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguibindings/ImImpl_Binding_WinAPI.h
+	<tchar.h>
+	"imguibindings.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguibindings/imguibindings.cpp
+	"imguibindings.h"
+	"edtaa3func.h"
+	"stb_image.h"
+	<unistd.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguibindings/edtaa3func.h
+	"edtaa3func.h"
+	<math.h>
+	<imgui.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguibindings/stb_image.h
+	"stb_image.h"
+	<stdio.h>
+	<stdarg.h>
+	<stddef.h>
+	<stdlib.h>
+	<string.h>
+	<limits.h>
+	<math.h>
+	<stdio.h>
+	<assert.h>
+	<stdint.h>
+	<emmintrin.h>
+	<intrin.h>
+	<arm_neon.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguifilesystem/minizip/ioapi.c
+	"ioapi.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguifilesystem/minizip/unzip.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<zlib.h>
+	"unzip.h"
+	<stddef.h>
+	<string.h>
+	<stdlib.h>
+	<errno.h>
+	"crypt.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguifilesystem/minizip/zip.c
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<time.h>
+	<zlib.h>
+	"zip.h"
+	<stddef.h>
+	<string.h>
+	<stdlib.h>
+	<errno.h>
+	"crypt.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguiemscriptenpersistentfolder.cpp
+	"imguiemscriptenpersistentfolder.h"
+	<emscripten.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguilistview/imguilistview.cpp
+	<imgui.h>
+	<imgui_internal.h>
+	"imguilistview.h"
+	<stdlib.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguifilesystem/imguifilesystem.cpp
+	<windows.h>
+	<imgui.h>
+	<imgui_internal.h>
+	"imguifilesystem.h"
+	<shlobj.h>
+	<unistd.h>
+	<pwd.h>
+	<stdint.h>
+	<stdio.h>
+	<limits.h>
+	<linux/limits.h>
+	<windef.h>
+	"dirent_portable.h"
+	<sys/stat.h>
+	<ctype.h>
+	<string.h>
+	<stdlib.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguitoolbar/imguitoolbar.cpp
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguipanelmanager/imguipanelmanager.cpp
+	"imguipanelmanager.h"
+	"../imguitabwindow/imguitabwindow.h"
+	"../imguihelper/imguihelper.h"
+	"../imguihelper/imguihelper.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguivariouscontrols/imguivariouscontrols.cpp
+	<imgui.h>
+	<imgui_internal.h>
+	"imguivariouscontrols.h"
+	"../imguibindings/stb_image.h"
+	"./addons/imguiyesaddons/imguiimageeditor_plugins/stb_image_write.h"
+	<stdlib.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguiimageeditor_plugins/stb_image_write.h
+	<stdio.h>
+	<stdarg.h>
+	<stdlib.h>
+	<string.h>
+	<math.h>
+	<assert.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguistyleserializer/imguistyleserializer.cpp
+	<imgui.h>
+	<stdio.h>
+	<string.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguidatechooser/imguidatechooser.cpp
+	<imgui.h>
+	<imgui_internal.h>
+	"imguidatechooser.h"
+	<time.h>
+	<ctype.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguicodeeditor/imguicodeeditor.cpp
+	"imguicodeeditor.h"
+	"utf8helper.h"
+	"../imguihelper/imguihelper.h"
+	"../imguihelper/imguihelper.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguicodeeditor/utf8helper.h
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguinodegrapheditor/imguinodegrapheditor.cpp
+	<imgui.h>
+	<imgui_internal.h>
+	<stdlib.h>
+	<malloc.h>
+	<alloca.h>
+	<stdlib.h>
+	"imguinodegrapheditor.h"
+	"../imguihelper/imguihelper.h"
+	"../imguihelper/imguihelper.h"
+	"../imguifilesystem/imguifilesystem.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguidock/imguidock.cpp
+	<imgui.h>
+	<imgui_internal.h>
+	"imguidock.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguibz2.cpp
+	"imguibz2.h"
+	"imgui_internal.h"
+	<stdio.h>
+	<windows.h>
+	<stdio.h>
+	<windows.h>
+	<stdlib.h>
+	<stdio.h>
+	<ctype.h>
+	<string.h>
+	<fcntl.h>
+	<io.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguistringifier.cpp
+	"imguistringifier.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguipdfviewer.cpp
+	<imgui.h>
+	<imgui_internal.h>
+	"imguipdfviewer.h"
+	<poppler/glib/poppler-document.h>
+	<poppler/glib/poppler-page.h>
+	<cairo/cairo.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguisdf.cpp
+	<imgui.h>
+	<imgui_internal.h>
+	"imguisdf.h"
+	"../imguicodeeditor/utf8helper.h"
+	"../imguistring/imguistring.h"
+	<stdio.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguitinyfiledialogs.cpp
+	"imguitinyfiledialogs.h"
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<ctype.h>
+	<Windows.h>
+	<Shlobj.h>
+	<sys/stat.h>
+	<conio.h>
+	<limits.h>
+	<unistd.h>
+	<dirent.h>
+	<termios.h>
+	<sys/utsname.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguisqlite3.cpp
+	"imguisqlite3.h"
+	<stdlib.h>
+	<sqlite3.h>
+	<string.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguiimageeditor.cpp
+	<imgui.h>
+	<imgui_internal.h>
+	"../../imgui.h"
+	"../../imgui_internal.h"
+	"./addons/imguibindings/stb_image.h"
+	"imguiimageeditor.h"
+	"../imguitoolbar/imguitoolbar.h"
+	<ctype.h>
+	<string.h>
+	<math.h>
+	"imguiimageeditor_plugins/stb_image_resize.h"
+	"imguiimageeditor_plugins/stb_image_write.h"
+	"imguiimageeditor_plugins/tiny_jpeg.h"
+	"imguiimageeditor_plugins/lodepng.cpp"
+	"imguiimageeditor_plugins/loadpng.h"
+	"imguiimageeditor_plugins/jo_gif.cpp"
+	"imguiimageeditor_plugins/tiny_ico.h"
+	<tiffio.h>
+	<webp/decode.h>
+	<webp/encode.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguiimageeditor_plugins/stb_image_resize.h
+	"stb_image_resize.h"
+	<stdint.h>
+	<assert.h>
+	<string.h>
+	<math.h>
+	<stdlib.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguiimageeditor_plugins/tiny_jpeg.h
+	"stb_image.h"
+	"tiny_jpeg.h"
+	<assert.h>
+	<inttypes.h>
+	<math.h>
+	<stdio.h>
+	<string.h>
+	<windows.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguiimageeditor_plugins/lodepng.cpp
+	"lodepng.h"
+	<limits.h>
+	<stdio.h>
+	<stdlib.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguiimageeditor_plugins/lodepng.h
+	<string.h>
+	<vector>
+	<string>
+	"lodepng.h"
+	<iostream>
+	"lodepng.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguiimageeditor_plugins/jo_gif.cpp
+	<stdio.h>
+	<stdlib.h>
+	<memory.h>
+	<math.h>
+	<vector>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguiimageeditor_plugins/tiny_ico.h
+	<assert.h>
+	<stdio.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguifreetype.cpp
+	<imgui.h>
+	<imgui_internal.h>
+	"imguifreetype.h"
+	<stdint.h>
+	<math.h>
+	<ft2build.h>
+	<imgui.h>
+	"imgui_internal.h"
+	"stb_rect_pack.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguiminigames.cpp
+	<imgui.h>
+	<imgui_internal.h>
+	"imguiminigames.h"
+	<stdlib.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguisoloud.cpp
+	<imgui.h>
+	<imgui_internal.h>
+	"imguisoloud.h"
+	<Windows.h>
+	<pthread.h>
+	<unistd.h>
+	<string.h>
+	<string.h>
+	<stdlib.h>
+	<math.h>
+	<xmmintrin.h>
+	<float.h>
+	<stdio.h>
+	<string.h>
+	"stb_vorbis.c"
+	<string.h>
+	<stdio.h>
+	<stdlib.h>
+	"imguimodplug.cpp.inl"
+	<stdlib.h>
+	<stdio.h>
+	<memory.h>
+	<stdlib.h>
+	<stdio.h>
+	<ctype.h>
+	<string.h>
+	<alsa/asoundlib.h>
+	<fcntl.h>
+	<unistd.h>
+	<string.h>
+	<AudioToolbox/AudioToolbox.h>
+	"OpenAL/al.h"
+	"OpenAL/alc.h"
+	"AL/al.h"
+	"AL/alc.h"
+	"AL/alext.h"
+	"OpenAL/al.h"
+	"OpenAL/alc.h"
+	"AL/al.h"
+	"AL/alc.h"
+	"AL/alext.h"
+	<windows.h>
+	<dlfcn.h>
+	"SLES/OpenSLES.h"
+	"SLES/OpenSLES_Platform.h"
+	"SLES/OpenSLES_Android.h"
+	<android/log.h>
+	<fcntl.h>
+	<sys/ioctl.h>
+	<sys/soundcard.h>
+	<unistd.h>
+	<string.h>
+	"portaudio.h"
+	"portaudio.h"
+	<Windows.h>
+	<dlfcn.h>
+	"SDL.h"
+	"SDL/SDL.h"
+	<math.h>
+	<stdlib.h>
+	"SDL.h"
+	"SDL/SDL.h"
+	<math.h>
+	<windows.h>
+	<dlfcn.h>
+	<stdlib.h>
+	"SDL.h"
+	"SDL2/SDL.h"
+	<math.h>
+	"SDL.h"
+	"SDL/SDL.h"
+	<math.h>
+	<windows.h>
+	<mmdeviceapi.h>
+	<audioclient.h>
+	<windows.h>
+	<mmsystem.h>
+	<windows.h>
+	<xaudio2.h>
+	"backend/xaudio2/xaudio2.h"
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/stb_vorbis.c
+	<stdio.h>
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<assert.h>
+	<math.h>
+	<malloc.h>
+	<alloca.h>
+	<limits.h>
+	<crtdbg.h>
+
+1508326392 /home/connor/Documents/Test-Dungeon-System TEMP/IMGUI/addons/imguiyesaddons/imguimodplug.cpp.inl
+	"config.h"
+	<inttypes.h>
+	<stdint.h>
+	<windows.h>
+	<windowsx.h>
+	<mmsystem.h>
+	<stdio.h>
+	<malloc.h>
+	<stdint.h>
+	<stdlib.h>
+	<stdio.h>
+	<string.h>
+	<malloc.h>
+	"config.h"
+	<math.h>
+	<math.h>
+	<limits.h>
+	<stdlib.h>
+	<time.h>
+	<string.h>
+	<math.h>
+	<ctype.h>
+	<unistd.h>
+	<stdlib.h>
+	<time.h>
+	<string.h>
+	<math.h>
+	<ctype.h>
+	<unistd.h>
+	<stdlib.h>
+	<time.h>
+	<string.h>
+	<math.h>
+	<ctype.h>
+	<limits.h>
+	<unistd.h>
+	<math.h>
+	<math.h>
+	<stdlib.h>
+
+1508403974 /home/connor/Documents/Test-Dungeon-System TEMP/debug_ui.h
+	"IMGUI/imgui.h"
+	"IMGUI/imgui-SFML.h"
+	"IMGUI/imgui_internal.h"
+	<SFML/System.hpp>
+	"game_consts.h"
+
+1508401471 source:/home/connor/Documents/Test-Dungeon-System TEMP/debug_ui.cpp
+	"debug_ui.h"
+

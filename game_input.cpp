@@ -1,5 +1,6 @@
 #ifndef GAME_INPUT_CPP
 #define GAME_INPUT_CPP
+#include "game_input.h"
 
 ButtonTransitionState getButtonTriggerState(bool oldState, bool currentState)
 {

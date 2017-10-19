@@ -14,7 +14,7 @@ map<uint32, game_item>::iterator doesItemExistByName(ItemManager &manager, strin
     return manager.item_list.end();
 }
 
-void loadItemListFromConfigFile(ItemManager &manager, string filename, bool reloadItemList=false)
+void loadItemListFromConfigFile(ItemManager &manager, string filename, bool reloadItemList)
 {
     Json::Value root = readJsonFile(filename);
 

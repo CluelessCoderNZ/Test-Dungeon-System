@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="Test-Dungeon-System" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/Test-Dungeon-System" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++14" />
+					<Add option="-g" />
+				</Compiler>
+				<Linker>
+					<Add library="sfml-graphics" />
+					<Add library="sfml-window" />
+					<Add library="sfml-system" />
+					<Add library="sfml-network" />
+					<Add directory="/usr/local/lib" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/Test-Dungeon-System" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add option="-std=c++14" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="sfml-graphics" />
+					<Add library="sfml-window" />
+					<Add library="sfml-system" />
+					<Add library="sfml-network" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-std=c++14" />
+			<Add option="-fexceptions" />
+			<Add option="-DDEBUG_TOGGLE" />
+			<Add option="-DIMGUI_INCLUDE_IMGUI_USER_H" />
+			<Add option="-DIMGUI_INCLUDE_IMGUI_USER_INL" />
+			<Add directory="IMGUI" />
+		</Compiler>
+		<Linker>
+			<Add library="GL" />
+			<Add library="GLU" />
+			<Add library="glut" />
+			<Add directory="/usr/local/lib" />
+		</Linker>
+		<ExtraCommands>
+			<Add before="bash MetaCompiler.sh" />
+		</ExtraCommands>
+		<Unit filename="IMGUI/addons/imgui_user.h" />
+		<Unit filename="IMGUI/addons/imgui_user.inl" />
+		<Unit filename="IMGUI/addons/imguibindings/ImImpl_Binding_Direct3D9.h" />
+		<Unit filename="IMGUI/addons/imguibindings/ImImpl_Binding_Glfw3.h" />
+		<Unit filename="IMGUI/addons/imguibindings/ImImpl_Binding_Glut.h" />
+		<Unit filename="IMGUI/addons/imguibindings/ImImpl_Binding_SDL2.h" />
+		<Unit filename="IMGUI/addons/imguibindings/ImImpl_Binding_WinAPI.h" />
+		<Unit filename="IMGUI/addons/imguibindings/edtaa3func.h" />
+		<Unit filename="IMGUI/addons/imguibindings/imguibindings.h" />
+		<Unit filename="IMGUI/addons/imguibindings/stb_image.h" />
+		<Unit filename="IMGUI/addons/imguicodeeditor/imguicodeeditor.h" />
+		<Unit filename="IMGUI/addons/imguicodeeditor/utf8helper.h" />
+		<Unit filename="IMGUI/addons/imguidatechooser/imguidatechooser.h" />
+		<Unit filename="IMGUI/addons/imguidock/imguidock.h" />
+		<Unit filename="IMGUI/addons/imguifilesystem/dirent_portable.h" />
+		<Unit filename="IMGUI/addons/imguifilesystem/imguifilesystem.h" />
+		<Unit filename="IMGUI/addons/imguifilesystem/minizip/crypt.h" />
+		<Unit filename="IMGUI/addons/imguifilesystem/minizip/ioapi.h" />
+		<Unit filename="IMGUI/addons/imguifilesystem/minizip/unzip.h" />
+		<Unit filename="IMGUI/addons/imguifilesystem/minizip/zip.h" />
+		<Unit filename="IMGUI/addons/imguihelper/imguihelper.h" />
+		<Unit filename="IMGUI/addons/imguilistview/imguilistview.h" />
+		<Unit filename="IMGUI/addons/imguinodegrapheditor/imguinodegrapheditor.h" />
+		<Unit filename="IMGUI/addons/imguipanelmanager/imguipanelmanager.h" />
+		<Unit filename="IMGUI/addons/imguistring/imguistring.h" />
+		<Unit filename="IMGUI/addons/imguistyleserializer/imguistyleserializer.h" />
+		<Unit filename="IMGUI/addons/imguitabwindow/imguitabwindow.h" />
+		<Unit filename="IMGUI/addons/imguitoolbar/imguitoolbar.h" />
+		<Unit filename="IMGUI/addons/imguivariouscontrols/imguivariouscontrols.h" />
+		<Unit filename="IMGUI/imconfig.h" />
+		<Unit filename="IMGUI/imgui-SFML.cpp" />
+		<Unit filename="IMGUI/imgui-SFML.h" />
+		<Unit filename="IMGUI/imgui.cpp" />
+		<Unit filename="IMGUI/imgui.h" />
+		<Unit filename="IMGUI/imgui_demo.cpp" />
+		<Unit filename="IMGUI/imgui_draw.cpp" />
+		<Unit filename="IMGUI/imgui_internal.h" />
+		<Unit filename="IMGUI/stb_rect_pack.h" />
+		<Unit filename="IMGUI/stb_textedit.h" />
+		<Unit filename="IMGUI/stb_truetype.h" />
+		<Unit filename="debug_ui.cpp" />
+		<Unit filename="debug_ui.h" />
+		<Unit filename="debug_utils.cpp" />
+		<Unit filename="debug_utils.h" />
+		<Unit filename="delaunay/delaunay.h" />
+		<Unit filename="delaunay/edge.h" />
+		<Unit filename="delaunay/triangle.h" />
+		<Unit filename="delaunay/vector2.h" />
+		<Unit filename="entity.cpp" />
+		<Unit filename="entity.h" />
+		<Unit filename="game_animation.cpp" />
+		<Unit filename="game_animation.h" />
+		<Unit filename="game_consts.h" />
+		<Unit filename="game_input.cpp" />
+		<Unit filename="game_input.h" />
+		<Unit filename="game_item.cpp" />
+		<Unit filename="game_item.h" />
+		<Unit filename="game_map.cpp" />
+		<Unit filename="game_map.h" />
+		<Unit filename="game_platform.cpp" />
+		<Unit filename="game_platform.h" />
+		<Unit filename="game_tileset.cpp" />
+		<Unit filename="game_tileset.h" />
+		<Unit filename="game_timer.cpp" />
+		<Unit filename="game_timer.h" />
+		<Unit filename="json/json-forwards.h" />
+		<Unit filename="json/json.h" />
+		<Unit filename="jsoncpp.cpp" />
+		<Unit filename="main.cpp" />
+		<Unit filename="map_flow_graph.cpp" />
+		<Unit filename="map_flow_graph.h" />
+		<Unit filename="math_utils.cpp" />
+		<Unit filename="math_utils.h" />
+		<Unit filename="resource_manager.cpp" />
+		<Unit filename="resource_manager.h" />
+		<Unit filename="tool_functions.cpp" />
+		<Unit filename="tool_functions.h" />
+		<Extensions>
+			<envvars />
+			<code_completion />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

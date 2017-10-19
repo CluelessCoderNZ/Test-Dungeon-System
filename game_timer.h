@@ -1,6 +1,7 @@
 #ifndef GAME_TIMER_H
 #define GAME_TIMER_H
 #include <math.h>
+#include "game_consts.h"
 
 #define MILLISECOND_PER_FRAME (1000.0/60.0)
 

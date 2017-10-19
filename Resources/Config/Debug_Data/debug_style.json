@@ -1,0 +1,9 @@
+{
+   "Additional_Text_Colour" : [ 255, 255, 0, 255 ],
+   "RoomID_Text_Colour" : [ 92, 21, 130, 255 ],
+   "Room_Boundary_Colour" : [ 109, 223, 109, 255 ],
+   "Room_Connections_Colour" : [ 209, 90, 46, 255 ],
+   "Room_Connections_Highlight" : [ 75, 163, 244, 255 ],
+   "Room_Graph_Colour" : [ 80, 241, 208, 255 ],
+   "Tilegrid_Colour" : [ 61, 168, 180, 88 ]
+}
