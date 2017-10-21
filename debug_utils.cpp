@@ -1313,8 +1313,6 @@ void ShowDebugWindow_ConfigEditor(DebugStateInformation &debug, bool *p_open)
     static GUI_WarningText warningText;
 
 
-
-
     if(ImGui::Button("Load"))
     {
         string file = fastReadFile(string(filename_buffer));

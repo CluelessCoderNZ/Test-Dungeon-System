@@ -224,20 +224,20 @@ bool createLinearJsonFromMemory(Json::Value &root, byte* source, string format)
                     byte_offset += sizeof(bool);
                 }else if(type_string==token_int)
                 {
-                    root[name_string] = *((int32*)(source+byte_offset));
-                    byte_offset += sizeof(int32);
+                    root[name_string] = *((Json::Value::Int*)(source+byte_offset));
+                    byte_offset += sizeof(int16);
                 }else if(type_string==token_uint)
                 {
-                    root[name_string] = *((uint32*)(source+byte_offset));
-                    byte_offset += sizeof(uint32);
+                    root[name_string] = *((Json::Value::UInt*)(source+byte_offset));
+                    byte_offset += sizeof(uint16);
                 }else if(type_string==token_int64)
                 {
-                    root[name_string] = *((long int*)(source+byte_offset));
-                    byte_offset += sizeof(long int);
+                    root[name_string] = *((Json::Value::Int64*)(source+byte_offset));
+                    byte_offset += sizeof(Json::Value::Int64);
                 }else if(type_string==token_uint64)
                 {
-                    root[name_string] = *((unsigned long int*)(source+byte_offset));
-                    byte_offset += sizeof(unsigned long int);
+                    root[name_string] = *((Json::Value::UInt64*)(source+byte_offset));
+                    byte_offset += sizeof(Json::Value::UInt64);
                 }else if(type_string==token_float)
                 {
                     root[name_string] = *((real32*)(source+byte_offset));
@@ -518,7 +518,7 @@ uint32 str2uint(string a)
 
 bool str2char(string &str, char* dest, uint32 buffer_size)
 {
-    uint32 buffer_end = min(buffer_size-1,str.length());
+    uint32 buffer_end = min(buffer_size-1,(uint32)str.length());
     str.copy(dest, buffer_end);
     dest[buffer_end]='\0';
     return (str.length() < buffer_size);

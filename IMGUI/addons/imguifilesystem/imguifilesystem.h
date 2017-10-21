@@ -65,6 +65,19 @@ x> Never tested on a real Windows OS and on MacOS.
 #include <imgui.h>
 #endif //IMGUI_API
 
+#include <strings.h>
+#include <stdio.h>
+#include <string>
+#include <stdlib.h>
+
+#ifdef OS_WINDOWS
+  #define snprintf _snprintf
+  #define vsnprintf _vsnprintf
+  #define strcasecmp _stricmp
+  #define strncasecmp _strnicmp
+#endif
+
+
 // TODO: Remove this definition: it doesn't work on some systems (= Windows AFAIK)
 //#define IMGUIFS_NO_EXTRA_METHODS    // optional, but it makes this header lighter...
 #ifndef IMGUIFS_NO_EXTRA_METHODS

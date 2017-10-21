@@ -27,12 +27,20 @@ using namespace std;
 #define NAMED_BLOCK(y, x, c) timed_block TOKENPASTE(TimedBlock_, __LINE__)( __FILE__, __LINE__, y, c, x);
 
 
+#ifdef OS_WINDOWS
+#include <x86intrin.h>
+static inline uint64 rdtsc()
+{
+    return __rdtsc();
+}
+#elif OS_LINUX
 static inline uint64 rdtsc()
 {
     uint64 lo,hi;
     __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
     return ((uint64)hi << 32) | lo;
 };
+#endif
 
 enum debug_event_type
 {

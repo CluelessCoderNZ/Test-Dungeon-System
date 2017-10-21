@@ -457,7 +457,7 @@ GameMap generateRandomGenericDungeon(uint32 seed, string roomdata_filename)
         {
             MapRoom_GraphEdge edge;
 
-            uint found = 0;
+            uint32 found = 0;
             for(uint32 x = 0; x < map.room.size() && found != 2; x++)
             {
                 if(map.room[x].bounds.contains(rawedges[i].p1.x, rawedges[i].p1.y))
@@ -929,7 +929,7 @@ void generateGraphMap(GameMap &map, vector<MapRoom_GraphEdge> &outputMap, vector
     {
         MapRoom_GraphEdge edge;
 
-        uint found = 0;
+        uint32 found = 0;
         for(uint32 listID = 0; listID < roomList.size() && found != 2; listID++)
         {
             uint32 x = roomList[listID];

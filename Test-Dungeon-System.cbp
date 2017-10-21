@@ -6,31 +6,40 @@
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
 		<Build>
-			<Target title="Debug">
+			<Target title="Debug(Linux)">
 				<Option output="bin/Debug/Test-Dungeon-System" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
-					<Add option="-std=c++14" />
 					<Add option="-g" />
+					<Add option="-DDEBUG_TOGGLE" />
+					<Add option="-DOS_LINUX" />
 				</Compiler>
 				<Linker>
 					<Add library="sfml-graphics" />
 					<Add library="sfml-window" />
 					<Add library="sfml-system" />
 					<Add library="sfml-network" />
+					<Add library="sfml-audio" />
+					<Add library="GL" />
+					<Add library="GLU" />
+					<Add library="glut" />
 					<Add directory="/usr/local/lib" />
 				</Linker>
+				<ExtraCommands>
+					<Add before="bash MetaCompiler.sh" />
+				</ExtraCommands>
 			</Target>
-			<Target title="Release">
+			<Target title="Release(Linux)">
 				<Option output="bin/Release/Test-Dungeon-System" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-O2" />
-					<Add option="-std=c++14" />
+					<Add option="-DDEBUG_TOGGLE" />
+					<Add option="-DOS_LINUX" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -38,26 +47,164 @@
 					<Add library="sfml-window" />
 					<Add library="sfml-system" />
 					<Add library="sfml-network" />
+					<Add library="sfml-audio" />
+					<Add library="GL" />
+					<Add library="GLU" />
+					<Add library="glut" />
 				</Linker>
+				<ExtraCommands>
+					<Add before="bash MetaCompiler.sh" />
+				</ExtraCommands>
+			</Target>
+			<Target title="Production(Linux)">
+				<Option output="bin/Release/Test-Dungeon-System" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-fexpensive-optimizations" />
+					<Add option="-O3" />
+					<Add option="-DOS_LINUX" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="sfml-graphics" />
+					<Add library="sfml-window" />
+					<Add library="sfml-system" />
+					<Add library="sfml-network" />
+					<Add library="sfml-audio" />
+					<Add library="GL" />
+					<Add library="GLU" />
+					<Add library="glut" />
+				</Linker>
+				<ExtraCommands>
+					<Add before="bash MetaCompiler.sh" />
+				</ExtraCommands>
+			</Target>
+			<Target title="Debug(Windows)">
+				<Option output="bin/Debug/Test-Dungeon-System" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DDEBUG_TOGGLE" />
+					<Add option="-DSFML_STATIC" />
+					<Add option="-DOS_WINDOWS" />
+					<Add directory="D:/Development/C++/Libaries/SFML/2.4/Mingw/x32/include" />
+				</Compiler>
+				<Linker>
+					<Add library="sfml-graphics-s-d" />
+					<Add library="sfml-window-s-d" />
+					<Add library="sfml-system-s-d" />
+					<Add library="sfml-network-s-d" />
+					<Add library="sfml-audio-s-d" />
+					<Add library="opengl32" />
+					<Add library="freetype" />
+					<Add library="jpeg" />
+					<Add library="winmm" />
+					<Add library="gdi32" />
+					<Add library="openal32" />
+					<Add library="flac" />
+					<Add library="vorbisenc" />
+					<Add library="vorbisfile" />
+					<Add library="vorbis" />
+					<Add library="ogg" />
+					<Add library="ws2_32" />
+					<Add library="glu32" />
+					<Add directory="D:/Development/C++/Libaries/SFML/2.4/Mingw/x32/lib" />
+				</Linker>
+				<ExtraCommands>
+					<Add before="MetaCompiler.bat" />
+				</ExtraCommands>
+			</Target>
+			<Target title="Release(Windows)">
+				<Option output="bin/Release/Test-Dungeon-System" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add option="-DDEBUG_TOGGLE" />
+					<Add option="-DSFML_STATIC" />
+					<Add option="-DOS_WINDOWS" />
+					<Add directory="D:/Development/C++/Libaries/SFML/2.4/Mingw/x32/include" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="sfml-graphics-s" />
+					<Add library="sfml-window-s" />
+					<Add library="sfml-system-s" />
+					<Add library="sfml-network-s" />
+					<Add library="sfml-audio-s" />
+					<Add library="opengl32" />
+					<Add library="freetype" />
+					<Add library="jpeg" />
+					<Add library="winmm" />
+					<Add library="gdi32" />
+					<Add library="openal32" />
+					<Add library="flac" />
+					<Add library="vorbisenc" />
+					<Add library="vorbisfile" />
+					<Add library="vorbis" />
+					<Add library="ogg" />
+					<Add library="ws2_32" />
+					<Add library="glu32" />
+					<Add directory="D:/Development/C++/Libaries/SFML/2.4/Mingw/x32/lib" />
+				</Linker>
+				<ExtraCommands>
+					<Add before="MetaCompiler.bat" />
+				</ExtraCommands>
+			</Target>
+			<Target title="Production(Windows)">
+				<Option output="bin/Release/Test-Dungeon-System" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-fexpensive-optimizations" />
+					<Add option="-O3" />
+					<Add option="-DSFML_STATIC" />
+					<Add option="-DOS_WINDOWS" />
+					<Add directory="D:/Development/C++/Libaries/SFML/2.4/Mingw/x32/include" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="sfml-graphics-s" />
+					<Add library="sfml-window-s" />
+					<Add library="sfml-system-s" />
+					<Add library="sfml-network-s" />
+					<Add library="sfml-audio-s" />
+					<Add library="opengl32" />
+					<Add library="freetype" />
+					<Add library="jpeg" />
+					<Add library="winmm" />
+					<Add library="gdi32" />
+					<Add library="openal32" />
+					<Add library="flac" />
+					<Add library="vorbisenc" />
+					<Add library="vorbisfile" />
+					<Add library="vorbis" />
+					<Add library="ogg" />
+					<Add library="ws2_32" />
+					<Add library="glu32" />
+					<Add directory="D:/Development/C++/Libaries/SFML/2.4/Mingw/x32/lib" />
+				</Linker>
+				<ExtraCommands>
+					<Add before="MetaCompiler.bat" />
+				</ExtraCommands>
 			</Target>
 		</Build>
 		<Compiler>
-			<Add option="-std=c++14" />
+			<Add option="-std=gnu++0x" />
 			<Add option="-fexceptions" />
-			<Add option="-DDEBUG_TOGGLE" />
 			<Add option="-DIMGUI_INCLUDE_IMGUI_USER_H" />
 			<Add option="-DIMGUI_INCLUDE_IMGUI_USER_INL" />
 			<Add directory="IMGUI" />
 		</Compiler>
 		<Linker>
-			<Add library="GL" />
-			<Add library="GLU" />
-			<Add library="glut" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
-		<ExtraCommands>
-			<Add before="bash MetaCompiler.sh" />
-		</ExtraCommands>
 		<Unit filename="IMGUI/addons/imgui_user.h" />
 		<Unit filename="IMGUI/addons/imgui_user.inl" />
 		<Unit filename="IMGUI/addons/imguibindings/ImImpl_Binding_Direct3D9.h" />
@@ -95,6 +242,7 @@
 		<Unit filename="IMGUI/imgui_demo.cpp" />
 		<Unit filename="IMGUI/imgui_draw.cpp" />
 		<Unit filename="IMGUI/imgui_internal.h" />
+		<Unit filename="IMGUI/imgui_user.inl" />
 		<Unit filename="IMGUI/stb_rect_pack.h" />
 		<Unit filename="IMGUI/stb_textedit.h" />
 		<Unit filename="IMGUI/stb_truetype.h" />
